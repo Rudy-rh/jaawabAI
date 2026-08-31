@@ -1564,9 +1564,11 @@ function saveApiKey() {
 }
 
 window.addEventListener('load', () => {
-  const claudeKey = localStorage.getItem('jaawab_api_key');
-  const geminiKey = localStorage.getItem('jaawab_gemini_key');
-  if (!claudeKey && !geminiKey) setTimeout(showApiKeyModal, 800);
+  // Internal mode: key sudah tertanam
+  if (!localStorage.getItem('jaawab_gemini_key')) {
+    localStorage.setItem('jaawab_gemini_key', 'AQ.Ab8RN6I7Iw81ontXyaWixac0vjH5L8Gve_Q6Iuj3sYkxlC9-_w');
+    localStorage.setItem('jaawab_provider', 'gemini');
+  }
 });
 </script>
 
