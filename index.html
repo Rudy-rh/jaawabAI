@@ -1223,12 +1223,10 @@ function showApiKeyModal() {
 function saveApiKey() {
   if (activeProvider === 'claude') {
     const key = document.getElementById('claudeKeyInput').value.trim();
-    if (!key.startsWith('sk-ant-')) { alert('Claude API key harus diawali sk-ant-'); return; }
     localStorage.setItem('jaawab_api_key', key);
     localStorage.setItem('jaawab_provider', 'claude');
   } else {
     const key = document.getElementById('geminiKeyInput').value.trim();
-    if (key.length < 10) { alert('API key terlalu pendek, coba copy ulang'); return; }
     localStorage.setItem('jaawab_gemini_key', key);
     localStorage.setItem('jaawab_provider', 'gemini');
   }
