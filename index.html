@@ -565,6 +565,21 @@
           </div>
         </div>
 
+        <div class="config-section">
+          <div class="config-section-title">📱 Integrasi WhatsApp (Fonnte)</div>
+          <div class="config-field">
+            <div class="config-label">Fonnte API Token</div>
+            <input class="config-input" id="cfgFonnteToken" placeholder="Token dari fonnte.com/me">
+          </div>
+          <div class="config-field">
+            <div class="config-label">Nomor WA Kasir/Admin (tanpa +62)</div>
+            <input class="config-input" id="cfgKasirNumber" placeholder="contoh: 0811485774">
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">
+            Setelah booking terkonfirmasi, notif otomatis terkirim ke nomor kasir via Fonnte.
+          </div>
+        </div>
+
         <button class="save-config-btn" onclick="saveConfig()">💾 Simpan & Terapkan</button>
 
         <div class="config-section">
@@ -606,121 +621,118 @@ const BUSINESSES = [
     goal: 'convert',
     responseDelay: 'random',
     knowledge: `Storee Barbershop Sorong — "Comfort Yourself"
-Barbershop modern untuk pria dan wanita di Kota Sorong.
+Barbershop modern untuk pria dan wanita di Kota Sorong, Papua Barat Daya.
+Zona waktu: WIT (UTC+9)
 
 ALAMAT & LOKASI:
 Jl. Jenderal Ahmad Yani No.21B, Kota Sorong, Papua Barat Daya
 (Sudah terdeteksi di Google Maps — cari "Storee Barbershop Sorong")
 
 JAM OPERASIONAL:
-- Buka setiap hari: 11.00 – 21.45
-- Sudah bisa menerima tamu mulai 10.30 (menunggu di ruang tunggu)
-- Pelanggan yang datang sebelum 21.46 masih dilayani untuk HAIR CUT
+- Buka setiap hari: 11.00 – 21.45 WIT
+- Sudah bisa menerima tamu mulai 10.30 WIT (menunggu di ruang tunggu)
+- Pelanggan yang datang sebelum 21.46 WIT masih dilayani untuk HAIR CUT
 - Layanan aplikasi (coloring, dll) yang datang mendekati tutup akan dialihkan ke keesokan harinya
 
 BOOKING:
-- Via WA: 081247911334
+- Via WA Agent ini (otomatis)
 - Via aplikasi Storee Barber (download di Play Store)
-- Booking diterima untuk layanan minimal 1 jam ke depan
+- Booking diterima untuk layanan MINIMAL 1 JAM ke depan dari waktu sekarang (WIT)
 - Booking kurang dari 1 jam = antrian biasa (dicatat kasir)
+- Nomor WA kasir: 0811485774
 
 PROMO HAIR CUT:
 - Tanpa aplikasi: Disc 0% → Rp 100.000
 - Download aplikasi Storee Barber: Disc 10% → Rp 90.000 ✅
 
 LAYANAN & HARGA LENGKAP:
-
 HAIR CUT: Rp 90.000 (pakai app) / Rp 100.000 (tanpa app)
+HIGHLIGHT (non full): Virgin+Ozone Rp210rb | Abu+Ozone Rp280rb | Fashion Alfaparf+Ozone Rp380rb
+COLORING COLOR BASIC+Ozone: Standar Rp160-180rb | Sebahu Rp190-210rb | Lebih sebahu mulai Rp210-240rb
+COLORING FASHION REGULER+Ozone: 0.3 Rp340rb | 0.6 Rp550rb | 1 mulai Rp690rb
+COLORING FASHION PREMIUM+Ozone: 0.3 Rp720rb | 0.6 Rp940rb | 1 mulai Rp1.230rb
+HAIR TATOO: mulai Rp30rb | BLOW: mulai Rp40rb | CATOK LURUS: mulai Rp50rb
+KERITING: Light Rp250rb | Standar Rp360rb | Sebahu Rp460rb | Lebih sebahu mulai Rp560rb
+SHAVING: Rp30rb | HAIR WASH & DRY: Rp20rb
+HAIR SPA LOREAL: Standar Rp140rb | Sebahu Rp150rb | Lebih sebahu Rp160rb
+TREATMENT TRADISIONAL: Standar Rp120rb | Sebahu Rp130rb | Lebih sebahu Rp140rb
+KERATIN Treatment: Standar Rp140rb | Sebahu Rp150rb | Lebih sebahu Rp160rb
+MASKING PLUS: Standar Rp110rb | Plus Pijat Wajah Rp130rb
+SMOOTHING: Standar Rp370rb | Sebahu Rp460rb | Lebih sebahu mulai Rp530rb
+KERATIN H+4: Standar Rp410rb | Sebahu Rp510rb | Lebih sebahu mulai Rp580rb
+OZONE O3 MicroMist: Rp50rb | MASSAGE: Rp50rb | BENTUK ALIS: Rp20rb | POTONG PONI: Rp20rb
 
-HIGHLIGHT (non full):
-- Virgin + Ozone: Rp 210.000
-- Abu + Ozone: Rp 280.000
-- Fashion Alfaparf + Ozone: Rp 380.000
+BARBERMAN & JADWAL AKTIF:
+- Senin: Ahmad, Onny, Wemmy (FAJAR LIBUR)
+- Selasa: Ahmad, Fajar, Onny (WEMMY LIBUR)
+- Rabu: Fajar, Onny, Wemmy (AHMAD LIBUR)
+- Kamis: Ahmad, Fajar, Wemmy (ONNY LIBUR)
+- Jumat: Ahmad, Fajar, Onny, Wemmy (SEMUA AKTIF)
+- Sabtu: Ahmad, Fajar, Onny, Wemmy (SEMUA AKTIF)
+- Minggu: Ahmad, Fajar, Onny, Wemmy (SEMUA AKTIF)
 
-COLORING - COLOR BASIC + Ozone:
-- Standar (GAR/BIG): Rp 160.000 / 180.000
-- Terurai sebahu (GAR/BIG): Rp 190.000 / 210.000
-- Terurai lebih dari sebahu: mulai Rp 210.000 / 240.000
+SISTEM BOOKING — PANDUAN AI AGENT:
+Kumpulkan informasi berikut secara bertahap (satu per satu, jangan sekaligus):
+1. Nama pemesan
+2. Nomor HP pemesan
+3. Berapa orang yang akan dilayani
+4. Layanan yang diinginkan (haircut, coloring, dll)
+5. Tanggal pelayanan
+6. Rencana waktu datang (WAJIB minimal 1 jam dari sekarang WIT)
+7. Pilihan barberman (atau bebas)
 
-COLORING - FASHION COLOR REGULER + Ozone (with bleaching):
-- 0,3 full standar: Rp 340.000
-- 0,6 full terurai sebahu: Rp 550.000
-- 1 full terurai lebih dari sebahu: mulai Rp 690.000
+ATURAN BOOKING BARBERMAN:
+- Jika barberman yang dipilih LIBUR di hari itu:
+  → Informasikan bahwa barberman tsb libur hari ini
+  → Tawarkan barberman lain yang aktif di hari tersebut
+  → ATAU tanyakan apakah mau tetap dengan barberman pilihan di hari aktifnya
+- Jika pelanggan mau barberman yang sama → informasikan hari aktif barberman tsb dan tanyakan mau ganti hari atau tetap hari ini dengan barber lain
 
-COLORING - FASHION PREMIUM + Ozone (with bleaching):
-- 0,3 full standar: Rp 720.000
-- 0,6 full terurai sebahu: Rp 940.000
-- 1 full terurai lebih dari sebahu: mulai Rp 1.230.000
+ATURAN WAKTU BOOKING:
+- Cek waktu sekarang (WIT) sebelum konfirmasi
+- Jika waktu datang kurang dari 1 jam dari sekarang → informasikan akan jadi antrian biasa, bukan booking
+- Jika lebih dari 1 jam → proses sebagai booking resmi
 
-HAIR TATOO: mulai Rp 30.000
-BLOW: mulai Rp 40.000
-CATOK LURUS: mulai Rp 50.000
-KERITING:
-- Light: Rp 250.000 | Standar: Rp 360.000
-- Sebahu terurai: Rp 460.000 | Lebih dari sebahu: mulai Rp 560.000
+FORMAT KONFIRMASI BOOKING (kirim ke pelanggan):
+✅ BOOKING TERKONFIRMASI — Storee Barbershop Sorong
 
-SHAVING: Rp 30.000
-HAIR WASH & DRY: Rp 20.000
+📋 Detail Booking:
+• Nama      : [nama]
+• HP        : [nomor hp]
+• Jumlah    : [jumlah orang] orang
+• Layanan   : [layanan]
+• Tanggal   : [tanggal] 
+• Datang    : [jam] WIT
+• Barberman : [nama barber / bebas]
 
-TREATMENT - HAIR SPA LOREAL:
-- Standar Pria: Rp 140.000
-- Terurai sebahu: Rp 150.000
-- Terurai lebih sebahu: Rp 160.000
+📍 Lokasi: Jl. Ahmad Yani No.21B, Sorong
+⏰ Buka: 10.30 – 21.45 WIT
+📱 Info: 0811485774
 
-TREATMENT - TRADISIONAL:
-- Standar Pria: Rp 120.000
-- Terurai sebahu: Rp 130.000
-- Terurai lebih sebahu: Rp 140.000
+Sampai jumpa & terima kasih sudah booking! ✂️😊
 
-KERATIN Treatment:
-- Standar Pria: Rp 140.000 | Sebahu: Rp 150.000 | Lebih sebahu: Rp 160.000
+FORMAT NOTIF KE KASIR (0811485774):
+🔔 BOOKING BARU — Storee Barbershop
 
-MASKING PLUS (Black Musk & Sheet Musk):
-- Standar: Rp 110.000
-- Plus Pijat Wajah hot&cool: Rp 130.000
+👤 Nama    : [nama]
+📱 HP      : [nomor hp]
+👥 Jumlah  : [jumlah] orang
+✂️ Layanan : [layanan]
+📅 Tanggal : [tanggal]
+🕐 Datang  : [jam] WIT
+💈 Barber  : [barber]
 
-SMOOTHING (plus Serum):
-- Standar Pria: Rp 370.000
-- Terurai Sebahu: Rp 460.000
-- Terurai lebih Sebahu: mulai Rp 530.000
-
-KERATIN H+4 (free Shampoo & Conditioner):
-- Standar Pria: Rp 410.000
-- Terurai Sebahu: Rp 510.000
-- Terurai lebih Sebahu: mulai Rp 580.000
-
-OZONE O3 MicroMist: Rp 50.000 (kurangi rontok, lawan ketombe, cegah uban)
-MASSAGE (kepala & bahu 20 menit): Rp 50.000
-BENTUK ALIS: Rp 20.000
-POTONG PONI: Rp 20.000
-
-PRODUK YANG DIJUAL:
-- Pomade Starley Brewing: Rp 190.000
-- Pomade Pharoah: Rp 200.000
-- Pomade Murray Super Light / Nu Nail / Hair Glo: Rp 150.000
-- Pomade Murray La Em Straight (Water Base): Rp 190.000
-- Pomade Barbers (Water Base): Rp 160.000
-- Pomade Chief Blue Hold/Black/White: Rp 240.000
-- Serum Aminexil Loreal Paris 6ml: Rp 90.000
-- Minoxidil Canada 60ml: Rp 220.000
-- Minoxidil FOAM 60ml: Rp 310.000
-- Hair Tonic 100ml: Rp 80.000
-
-BARBERMAN AKTIF (jadwal mingguan):
-- Senin: Ahmad, Onny, Wemmy
-- Selasa: Ahmad, Fajar, Onny
-- Rabu: Fajar, Onny, Wemmy
-- Kamis: Ahmad, Fajar, Wemmy
-- Jumat: Ahmad, Fajar, Onny, Wemmy
-- Sabtu: Ahmad, Fajar, Onny, Wemmy
-- Minggu: Ahmad, Fajar, Onny, Wemmy
+Status: ✅ TERKONFIRMASI
+— JaawabAI Agent —
 
 MEDIA SOSIAL:
 - Instagram: @storeebarber.sorong
-- Facebook: Storee Barbershop
+- Facebook: Storee Barbershop  
 - TikTok: @storeebarber
 - Website: storeebarbershop.com
-- App: Storee Barber (Play Store)`,
+- App: Storee Barber (Play Store)``,
+    fonnte_token: '',
+    kasir_number: '0811485774',
     scenarios: [
       'Berapa harga potong rambut?',
       'Jam buka sampai jam berapa?',
@@ -861,6 +873,8 @@ function selectBiz(id) {
   document.getElementById('cfgGoal').value = currentBiz.goal;
   document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
   updateDelayPreview();
+  document.getElementById('cfgFonnteToken').value = currentBiz.fonnte_token || '';
+  document.getElementById('cfgKasirNumber').value = currentBiz.kasir_number || '';
 
   // Stats
   document.getElementById('statConv').textContent = currentBiz.stats.conv;
@@ -894,6 +908,8 @@ function saveConfig() {
   currentBiz.knowledge = document.getElementById('cfgKnowledge').value;
   currentBiz.goal = document.getElementById('cfgGoal').value;
   currentBiz.responseDelay = document.getElementById('cfgDelay').value;
+  currentBiz.fonnte_token = document.getElementById('cfgFonnteToken').value;
+  currentBiz.kasir_number = document.getElementById('cfgKasirNumber').value;
 
   document.getElementById('topbarName').textContent = currentBiz.name;
   document.getElementById('topbarDesc').textContent = `AI Agent: ${currentBiz.agentName} — ${currentBiz.type}`;
@@ -935,6 +951,32 @@ function updateDelayPreview() {
     human: '🧑 Durasi delay proporsional dengan panjang balasan — makin panjang jawaban, makin lama "mengetik".'
   };
   el.textContent = map[val] || '';
+}
+
+// ===== KIRIM NOTIF KASIR =====
+async function kirimNotifKasir(pesan, nomorKasir, fonnteToken) {
+  try {
+    const response = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': fonnteToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        target: nomorKasir,
+        message: pesan,
+        countryCode: '62'
+      })
+    });
+    const data = await response.json();
+    if (data.status) {
+      console.log('Notif kasir terkirim!', data);
+    } else {
+      console.warn('Notif kasir gagal:', data);
+    }
+  } catch(e) {
+    console.error('Error kirim notif kasir:', e);
+  }
 }
 
 // ===== CHAT =====
@@ -1078,6 +1120,254 @@ async function sendMessage() {
     removeTyping();
     appendMessage('ai', reply);
     conversationHistory.push({ role: 'assistant', content: reply });
+
+    // Cek apakah ada notif kasir yang perlu dikirim
+    if (reply.includes('[NOTIF_KASIR]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
+      const parts = reply.split('[NOTIF_KASIR]');
+      const notifText = parts[1]?.trim();
+      if (notifText) {
+        kirimNotifKasir(notifText, currentBiz.kasir_number, currentBiz.fonnte_token);
+      }
+    }
+
+    // Update stats
+    totalAnswered++;
+    currentBiz.stats.answered++;
+    document.getElementById('statAnswered').textContent = currentBiz.stats.answered;
+
+    // Lead detection (simple keyword)
+    const leadKeywords = ['beli', 'daftar', 'bayar', 'langganan', 'booking', 'mau coba', 'harga', 'berapa', 'premium', 'download'];
+    if (leadKeywords.some(k => text.toLowerCase().includes(k))) {
+      currentBiz.stats.leads++;
+      document.getElementById('statLeads').textContent = currentBiz.stats.leads;
+    }
+
+  } catch (err) {
+    removeTyping();
+    const errMsg = err.message || 'Unknown';
+    appendMessage('ai', '⚠️ Error: ' + errMsg + '<br><small style="color:#7b82a0">Cek console browser (F12) untuk detail</small>');
+    console.error('JaawabAI error:', err);
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+function buildSystemPrompt() {
+  const goalMap = {
+    convert: 'Utamakan mendorong pelanggan untuk melakukan booking. Tunjukkan nilai produk/layanan dengan hangat dan persuasif.',
+    support: 'Bantu pelanggan menyelesaikan masalah atau pertanyaan dengan ramah dan tuntas.',
+    onboarding: 'Panduan pengguna baru memahami cara kerja produk/layanan dengan sabar dan jelas.',
+    faq: 'Jawab pertanyaan umum secara ringkas, akurat, dan mudah dipahami.'
+  };
+
+  // Waktu WIT sekarang
+  const now = new Date();
+  const witOffset = 9 * 60 * 60 * 1000;
+  const witTime = new Date(now.getTime() + witOffset);
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const hariIni = days[witTime.getUTCDay()];
+  const jam = witTime.getUTCHours().toString().padStart(2,'0');
+  const menit = witTime.getUTCMinutes().toString().padStart(2,'0');
+  const jamSekarang = jam + '.' + menit;
+
+  const basePrompt = 'Kamu adalah ' + currentBiz.agentName + ', AI Agent untuk ' + currentBiz.name + ' (' + currentBiz.type + ').';
+  const misiPrompt = 'MISI UTAMA: ' + (goalMap[currentBiz.goal] || goalMap.convert);
+  const waktuPrompt = 'WAKTU SEKARANG: ' + hariIni + ', pukul ' + jamSekarang + ' WIT';
+  const knowledgePrompt = 'PENGETAHUAN BISNIS:\n' + currentBiz.knowledge;
+  const rulesPrompt = `ATURAN PERCAKAPAN:
+- Gunakan bahasa Indonesia yang ramah, santai, dan natural seperti chat WA
+- Jawab singkat dan to the point
+- Jangan sebut bahwa kamu adalah AI jika tidak ditanya
+- Gunakan emoji secukupnya agar terasa manusiawi
+
+ATURAN BOOKING (khusus jika bisnis ini punya sistem booking):
+- Kumpulkan data booking SATU PER SATU, tidak sekaligus
+- Setelah semua data lengkap, tampilkan FORMAT KONFIRMASI BOOKING
+- Setelah konfirmasi booking tampil, tambahkan baris: [NOTIF_KASIR] lalu FORMAT NOTIF KE KASIR
+- Teks [NOTIF_KASIR] akan diproses sistem untuk kirim notif ke kasir otomatis
+- Selalu cek jadwal barberman berdasarkan hari yang dipilih
+- Waktu datang harus minimal 1 jam dari sekarang (` + jamSekarang + ` WIT)`;
+
+  return basePrompt + '\n\n' + misiPrompt + '\n\n' + waktuPrompt + '\n\n' + knowledgePrompt + '\n\n' + rulesPrompt;
+}
+
+// ===== KIRIM NOTIF KASIR =====
+async function kirimNotifKasir(pesan, nomorKasir, fonnteToken) {
+  try {
+    const response = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': fonnteToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        target: nomorKasir,
+        message: pesan,
+        countryCode: '62'
+      })
+    });
+    const data = await response.json();
+    if (data.status) {
+      console.log('Notif kasir terkirim!', data);
+    } else {
+      console.warn('Notif kasir gagal:', data);
+    }
+  } catch(e) {
+    console.error('Error kirim notif kasir:', e);
+  }
+}
+
+// ===== CHAT =====
+function appendMessage(role, text, time) {
+  const msgs = document.getElementById('messages');
+  const now = time || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  if (role === 'ai') {
+    div.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div>
+        <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+        <div class="msg-time">${currentBiz?.agentName || 'AI'} · ${now}</div>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div class="msg-avatar">👤</div>
+      <div>
+        <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+  }
+
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="typing-indicator">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !currentBiz) return;
+
+  input.value = '';
+  autoResize(input);
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+
+  showTyping();
+
+  try {
+    const systemPrompt = buildSystemPrompt();
+    const provider = localStorage.getItem('jaawab_provider') || 'gemini';
+    const claudeKey = localStorage.getItem('jaawab_api_key');
+    const geminiKey = localStorage.getItem('jaawab_gemini_key');
+
+    if (provider === 'claude' && !claudeKey) { removeTyping(); showApiKeyModal(); document.getElementById('sendBtn').disabled = false; return; }
+    if (provider === 'gemini' && !geminiKey) { removeTyping(); showApiKeyModal(); document.getElementById('sendBtn').disabled = false; return; }
+
+    let reply = '';
+
+    if (provider === 'claude') {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': claudeKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: conversationHistory
+        })
+      });
+      const data = await response.json();
+      if (data.error) {
+        if (data.error.type === 'authentication_error') {
+          localStorage.removeItem('jaawab_api_key');
+          removeTyping(); showApiKeyModal();
+          document.getElementById('sendBtn').disabled = false; return;
+        }
+        throw new Error(data.error.message);
+      }
+      reply = data.content?.[0]?.text || 'Maaf, ada gangguan.';
+
+    } else {
+      // Gemini API
+      const geminiMessages = conversationHistory.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: geminiMessages
+          })
+        }
+      );
+      const data = await response.json();
+      if (data.error) {
+        const code = data.error.code;
+        const msg = data.error.message || 'Unknown error';
+        if (code === 400 || code === 403 || code === 401) {
+          localStorage.removeItem('jaawab_gemini_key');
+          removeTyping();
+          appendMessage('ai', '❌ API key Gemini bermasalah: ' + msg + '. Silakan masukkan ulang.');
+          showApiKeyModal();
+          document.getElementById('sendBtn').disabled = false; return;
+        }
+        throw new Error('Gemini error ' + code + ': ' + msg);
+      }
+      const candidate = data.candidates?.[0];
+      if (!candidate) throw new Error('Gemini tidak mengembalikan respons');
+      reply = candidate.content?.parts?.[0]?.text || 'Maaf, ada gangguan.';
+    }
+
+    const delayMs = getDelayMs(reply.length);
+    if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
+
+    removeTyping();
+    appendMessage('ai', reply);
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    // Cek apakah ada notif kasir yang perlu dikirim
+    if (reply.includes('[NOTIF_KASIR]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
+      const parts = reply.split('[NOTIF_KASIR]');
+      const notifText = parts[1]?.trim();
+      if (notifText) {
+        kirimNotifKasir(notifText, currentBiz.kasir_number, currentBiz.fonnte_token);
+      }
+    }
 
     // Update stats
     totalAnswered++;
