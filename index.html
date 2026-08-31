@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentHub — Platform AI untuk Bisnis Anda</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2335;
+    --border: #2a3050;
+    --accent: #4f7fff;
+    --accent2: #7c5cfc;
+    --text: #e8eaf6;
+    --muted: #7b82a0;
+    --success: #2ecc71;
+    --warning: #f39c12;
+    --radius: 12px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== LAYOUT ===== */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+  }
+
+  .logo-sub { font-size: 11px; color: var(--muted); }
+
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 16px 16px 6px;
+  }
+
+  .business-list { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
+
+  .biz-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+
+  .biz-item:hover { background: var(--surface2); }
+  .biz-item.active { background: var(--surface2); border-color: var(--border); }
+
+  .biz-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .biz-info { flex: 1; min-width: 0; }
+  .biz-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .biz-status { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+  }
+
+  .add-biz-btn {
+    margin: 8px;
+    padding: 10px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .add-biz-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== MAIN PANEL ===== */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-icon { font-size: 22px; }
+  .topbar-name { font-size: 16px; font-weight: 600; }
+  .topbar-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  .topbar-actions { display: flex; gap: 8px; }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.85; }
+
+  /* ===== CONTENT AREA ===== */
+  .content { flex: 1; display: flex; overflow: hidden; }
+
+  /* ===== CHAT PANEL ===== */
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 12px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chat-title { font-size: 13px; font-weight: 500; }
+  .chat-subtitle { font-size: 11px; color: var(--muted); }
+
+  .chat-mode-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border-radius: 7px;
+    padding: 3px;
+  }
+
+  .mode-btn {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .mode-btn.active { background: var(--surface2); color: var(--text); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .msg { display: flex; gap: 10px; max-width: 85%; }
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .msg.ai .msg-avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+
+  .msg.ai .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .msg.user .msg-bubble { background: var(--accent); color: #fff; border-top-right-radius: 4px; }
+
+  .msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; text-align: right; }
+
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    border-top-left-radius: 4px;
+    width: fit-content;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 1.2s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    resize: none;
+    min-height: 42px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.4;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== CONFIG PANEL ===== */
+  .config-panel {
+    width: 300px;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .config-section { }
+  .config-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .config-field { margin-bottom: 10px; }
+  .config-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+  .config-input, .config-textarea, .config-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .config-input:focus, .config-textarea:focus, .config-select:focus { border-color: var(--accent); }
+  .config-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+
+  .save-config-btn {
+    width: 100%;
+    padding: 9px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: opacity 0.15s;
+  }
+  .save-config-btn:hover { opacity: 0.85; }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-val { font-weight: 600; color: var(--accent); }
+
+  .quick-replies {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .quick-reply-item {
+    padding: 7px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    color: var(--text);
+  }
+  .quick-reply-item:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+    padding: 40px;
+    text-align: center;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.5; }
+  .empty-title { font-size: 15px; font-weight: 500; color: var(--text); }
+  .empty-desc { font-size: 13px; max-width: 300px; line-height: 1.5; }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">AgentHub</div>
+      <div class="logo-sub">Platform AI untuk semua bisnis Anda</div>
+    </div>
+
+    <div class="section-label">Bisnis Aktif</div>
+
+    <div class="business-list" id="bizList"></div>
+
+    <button class="add-biz-btn" onclick="addBusiness()">+ Tambah bisnis baru</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar" id="topbar" style="display:none">
+      <div class="topbar-left">
+        <div class="topbar-icon" id="topbarIcon"></div>
+        <div>
+          <div class="topbar-name" id="topbarName"></div>
+          <div class="topbar-desc" id="topbarDesc"></div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="toggleConfig()">⚙ Konfigurasi</button>
+        <button class="btn btn-primary" onclick="copyEmbedCode()">📋 Kode Embed</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🤖</div>
+        <div class="empty-title">Pilih bisnis untuk mulai</div>
+        <div class="empty-desc">Pilih salah satu bisnis di sebelah kiri, atau tambah bisnis baru untuk mengatur AI Agent-nya.</div>
+      </div>
+
+      <!-- CHAT PANEL -->
+      <div class="chat-panel" id="chatPanel" style="display:none">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title">Preview percakapan AI Agent</div>
+            <div class="chat-subtitle">Simulasi tampilan dari sisi pelanggan</div>
+          </div>
+          <div class="chat-mode-toggle">
+            <button class="mode-btn active" onclick="setMode('chat', this)">💬 Chat</button>
+            <button class="mode-btn" onclick="setMode('test', this)">🧪 Uji skenario</button>
+          </div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="chat-input-area">
+          <div class="chat-input-row">
+            <textarea
+              class="chat-input"
+              id="chatInput"
+              placeholder="Ketik pesan pelanggan di sini untuk uji AI Agent..."
+              rows="1"
+              onkeydown="handleKey(event)"
+              oninput="autoResize(this)"
+            ></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIG PANEL -->
+      <div class="config-panel" id="configPanel" style="display:none">
+
+        <div class="config-section">
+          <div class="config-section-title">Identitas Bisnis</div>
+          <div class="config-field">
+            <div class="config-label">Nama bisnis</div>
+            <input class="config-input" id="cfgName" placeholder="contoh: Storee Barbershop">
+          </div>
+          <div class="config-field">
+            <div class="config-label">Jenis bisnis</div>
+            <input class="config-input" id="cfgType" placeholder="contoh: Barbershop, Aplikasi mobile">
+          </div>
+          <div class="config-field">
+            <div class="config-label">Nama & karakter AI Agent</div>
+            <input class="config-input" id="cfgAgentName" placeholder="contoh: Rangga — ramah, santai">
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">Knowledge Base</div>
+          <div class="config-field">
+            <div class="config-label">Informasi bisnis & layanan</div>
+            <textarea class="config-textarea" id="cfgKnowledge" style="min-height:140px"
+              placeholder="Masukkan semua info yang perlu diketahui AI:
+- Layanan & harga
+- Jam operasional
+- Lokasi / cara pesan
+- FAQ umum
+- Promo aktif
+- Dan lainnya..."></textarea>
+          </div>
+          <div class="config-field">
+            <div class="config-label">Tujuan utama AI Agent</div>
+            <select class="config-select" id="cfgGoal">
+              <option value="convert">Konversi & booking</option>
+              <option value="support">Layanan pelanggan</option>
+              <option value="onboarding">Onboarding pengguna baru</option>
+              <option value="faq">Jawab FAQ otomatis</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">⏱ Kecepatan Respon AI</div>
+          <div class="config-field">
+            <div class="config-label">Mode respon</div>
+            <select class="config-select" id="cfgDelay" onchange="updateDelayPreview()">
+              <option value="instant">⚡ Langsung (instan)</option>
+              <option value="3">🕐 3 detik</option>
+              <option value="10">🕑 10 detik</option>
+              <option value="60">🕒 1 menit</option>
+              <option value="random" selected>🎲 Random (3–15 detik, terasa natural)</option>
+              <option value="human">🧑 Human-like (typing indicator proporsional)</option>
+            </select>
+          </div>
+          <div id="delayPreview" style="font-size:11px;color:var(--muted);padding:6px 8px;background:var(--bg);border-radius:6px;line-height:1.5">
+            🎲 Respon akan muncul dalam 3–15 detik secara acak — terasa seperti dibalas manusia sungguhan.
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">🔄 Update Knowledge Base</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+            <b style="color:var(--text)">Manual update</b> — edit langsung di kotak teks di atas, lalu simpan.<br><br>
+            <b style="color:var(--text)">Auto-sync</b> (segera hadir) — hubungkan ke Google Sheet, Notion, atau file PDF agar knowledge base update otomatis saat Anda ubah data di sumber aslinya.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div style="padding:5px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:6px;font-size:11px;color:var(--muted)">📊 Google Sheet (segera)</div>
+            <div style="padding:5px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:6px;font-size:11px;color:var(--muted)">📄 PDF auto-read (segera)</div>
+            <div style="padding:5px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:6px;font-size:11px;color:var(--muted)">🌐 Website scrape (segera)</div>
+          </div>
+        </div>
+
+        <button class="save-config-btn" onclick="saveConfig()">💾 Simpan & Terapkan</button>
+
+        <div class="config-section">
+          <div class="config-section-title">Statistik hari ini</div>
+          <div class="stat-row">
+            <span>Percakapan</span>
+            <span class="stat-val" id="statConv">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Pertanyaan dijawab</span>
+            <span class="stat-val" id="statAnswered">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Lead terdeteksi</span>
+            <span class="stat-val" id="statLeads">0</span>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-section-title">Uji cepat skenario</div>
+          <div class="quick-replies" id="quickReplies"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ===== DATA =====
+const BUSINESSES = [
+  {
+    id: 'barbershop',
+    name: 'Storee Barbershop',
+    type: 'Barbershop & grooming',
+    icon: '✂️',
+    agentName: 'Rangga',
+    goal: 'convert',
+    responseDelay: 'random',
+    knowledge: `Storee Barbershop Sorong — "Comfort Yourself"
+Barbershop modern untuk pria dan wanita di Kota Sorong.
+
+ALAMAT & LOKASI:
+Jl. Jenderal Ahmad Yani No.21B, Kota Sorong, Papua Barat Daya
+(Sudah terdeteksi di Google Maps — cari "Storee Barbershop Sorong")
+
+JAM OPERASIONAL:
+- Buka setiap hari: 11.00 – 21.45
+- Sudah bisa menerima tamu mulai 10.30 (menunggu di ruang tunggu)
+- Pelanggan yang datang sebelum 21.46 masih dilayani untuk HAIR CUT
+- Layanan aplikasi (coloring, dll) yang datang mendekati tutup akan dialihkan ke keesokan harinya
+
+BOOKING:
+- Via WA: 081247911334
+- Via aplikasi Storee Barber (download di Play Store)
+- Booking diterima untuk layanan minimal 1 jam ke depan
+- Booking kurang dari 1 jam = antrian biasa (dicatat kasir)
+
+PROMO HAIR CUT:
+- Tanpa aplikasi: Disc 0% → Rp 100.000
+- Download aplikasi Storee Barber: Disc 10% → Rp 90.000 ✅
+
+LAYANAN & HARGA LENGKAP:
+
+HAIR CUT: Rp 90.000 (pakai app) / Rp 100.000 (tanpa app)
+
+HIGHLIGHT (non full):
+- Virgin + Ozone: Rp 210.000
+- Abu + Ozone: Rp 280.000
+- Fashion Alfaparf + Ozone: Rp 380.000
+
+COLORING - COLOR BASIC + Ozone:
+- Standar (GAR/BIG): Rp 160.000 / 180.000
+- Terurai sebahu (GAR/BIG): Rp 190.000 / 210.000
+- Terurai lebih dari sebahu: mulai Rp 210.000 / 240.000
+
+COLORING - FASHION COLOR REGULER + Ozone (with bleaching):
+- 0,3 full standar: Rp 340.000
+- 0,6 full terurai sebahu: Rp 550.000
+- 1 full terurai lebih dari sebahu: mulai Rp 690.000
+
+COLORING - FASHION PREMIUM + Ozone (with bleaching):
+- 0,3 full standar: Rp 720.000
+- 0,6 full terurai sebahu: Rp 940.000
+- 1 full terurai lebih dari sebahu: mulai Rp 1.230.000
+
+HAIR TATOO: mulai Rp 30.000
+BLOW: mulai Rp 40.000
+CATOK LURUS: mulai Rp 50.000
+KERITING:
+- Light: Rp 250.000 | Standar: Rp 360.000
+- Sebahu terurai: Rp 460.000 | Lebih dari sebahu: mulai Rp 560.000
+
+SHAVING: Rp 30.000
+HAIR WASH & DRY: Rp 20.000
+
+TREATMENT - HAIR SPA LOREAL:
+- Standar Pria: Rp 140.000
+- Terurai sebahu: Rp 150.000
+- Terurai lebih sebahu: Rp 160.000
+
+TREATMENT - TRADISIONAL:
+- Standar Pria: Rp 120.000
+- Terurai sebahu: Rp 130.000
+- Terurai lebih sebahu: Rp 140.000
+
+KERATIN Treatment:
+- Standar Pria: Rp 140.000 | Sebahu: Rp 150.000 | Lebih sebahu: Rp 160.000
+
+MASKING PLUS (Black Musk & Sheet Musk):
+- Standar: Rp 110.000
+- Plus Pijat Wajah hot&cool: Rp 130.000
+
+SMOOTHING (plus Serum):
+- Standar Pria: Rp 370.000
+- Terurai Sebahu: Rp 460.000
+- Terurai lebih Sebahu: mulai Rp 530.000
+
+KERATIN H+4 (free Shampoo & Conditioner):
+- Standar Pria: Rp 410.000
+- Terurai Sebahu: Rp 510.000
+- Terurai lebih Sebahu: mulai Rp 580.000
+
+OZONE O3 MicroMist: Rp 50.000 (kurangi rontok, lawan ketombe, cegah uban)
+MASSAGE (kepala & bahu 20 menit): Rp 50.000
+BENTUK ALIS: Rp 20.000
+POTONG PONI: Rp 20.000
+
+PRODUK YANG DIJUAL:
+- Pomade Starley Brewing: Rp 190.000
+- Pomade Pharoah: Rp 200.000
+- Pomade Murray Super Light / Nu Nail / Hair Glo: Rp 150.000
+- Pomade Murray La Em Straight (Water Base): Rp 190.000
+- Pomade Barbers (Water Base): Rp 160.000
+- Pomade Chief Blue Hold/Black/White: Rp 240.000
+- Serum Aminexil Loreal Paris 6ml: Rp 90.000
+- Minoxidil Canada 60ml: Rp 220.000
+- Minoxidil FOAM 60ml: Rp 310.000
+- Hair Tonic 100ml: Rp 80.000
+
+BARBERMAN AKTIF (jadwal mingguan):
+- Senin: Ahmad, Onny, Wemmy
+- Selasa: Ahmad, Fajar, Onny
+- Rabu: Fajar, Onny, Wemmy
+- Kamis: Ahmad, Fajar, Wemmy
+- Jumat: Ahmad, Fajar, Onny, Wemmy
+- Sabtu: Ahmad, Fajar, Onny, Wemmy
+- Minggu: Ahmad, Fajar, Onny, Wemmy
+
+MEDIA SOSIAL:
+- Instagram: @storeebarber.sorong
+- Facebook: Storee Barbershop
+- TikTok: @storeebarber
+- Website: storeebarbershop.com
+- App: Storee Barber (Play Store)`,
+    scenarios: [
+      'Berapa harga potong rambut?',
+      'Jam buka sampai jam berapa?',
+      'Barbershop ini di Sorong ya?',
+      'Cara booking gimana?',
+      'Ada promo apa sekarang?',
+      'Mau coloring, berapa harganya?'
+    ],
+    stats: { conv: 12, answered: 47, leads: 8 }
+  },
+  {
+    id: 'habitkeluarga',
+    name: 'Habit Keluarga X',
+    type: 'Aplikasi mobile',
+    icon: '🏡',
+    agentName: 'Hana',
+    goal: 'convert',
+    knowledge: `Habit Keluarga X — Aplikasi untuk menanamkan kebiasaan baik pada keluarga.
+
+TENTANG APLIKASI:
+Orang tua / manager / kepala organisasi bisa membuat program habit tracking untuk anggota keluarga atau tim mereka. HP bukan hanya menggerus habit baik anak — justru bisa dipakai untuk membentuknya.
+
+FITUR UTAMA:
+- Owner bisa tambah 1–100 anggota
+- Habit harian, mingguan, dan bulanan
+- Reward system (fisik atau spiritual)
+- Notifikasi & pengingat dari owner
+- Laporan pencapaian individual & kolektif
+- Kontrol anomali (kejujuran anggota)
+- Co-owner (istri/asisten bisa ikut pantau)
+- AI Insight (premium): rekomendasi habit & perkembangan
+
+HARGA:
+- Gratis (seumur hidup): 1 anggota, 4 habit tambahan, fitur terbatas
+- Premium bulanan: Rp 100.000/bulan (hingga 100 anggota!)
+- Premium 6 bulan & tahunan: lebih hemat
+
+PERBANDINGAN: Rp 100.000 untuk 5 anggota = Rp 20.000/orang/bulan — senilai 1 porsi nasi saja!
+
+SIAPA PENGGUNANYA:
+- Orang tua yang ingin anak punya kebiasaan baik
+- Manager yang ingin SDM baru punya habit kerja bagus
+- Guru / pendidik yang ingin muridnya disiplin
+- Circle pertemanan yang ingin maju bersama
+
+CARA MULAI:
+1. Download di Play Store
+2. Daftar sebagai owner
+3. Setting wizard mudah (nama grup, durasi, habit, reward)
+4. Undang anggota — selesai!`,
+    scenarios: [
+      'Aplikasi ini untuk apa?',
+      'Berapa harganya?',
+      'Bedanya gratis dan premium apa?',
+      'Cocok untuk guru di sekolah tidak?'
+    ],
+    stats: { conv: 5, answered: 23, leads: 6 }
+  }
+];
+
+let currentBizId = null;
+let currentBiz = null;
+let conversationHistory = [];
+let configVisible = false;
+let totalAnswered = 0;
+let totalLeads = 0;
+
+// ===== INIT =====
+function init() {
+  renderBizList();
+}
+
+function renderBizList() {
+  const list = document.getElementById('bizList');
+  list.innerHTML = BUSINESSES.map(b => `
+    <div class="biz-item ${b.id === currentBizId ? 'active' : ''}" onclick="selectBiz('${b.id}')">
+      <div class="biz-icon" style="background:${b.id==='barbershop'?'#1a2a3a':'#1a3a2a'}">${b.icon}</div>
+      <div class="biz-info">
+        <div class="biz-name">${b.name}</div>
+        <div class="biz-status">AI Agent aktif</div>
+      </div>
+      <div class="status-dot"></div>
+    </div>
+  `).join('');
+}
+
+function selectBiz(id) {
+  currentBizId = id;
+  currentBiz = BUSINESSES.find(b => b.id === id);
+  conversationHistory = [];
+  totalAnswered = 0;
+  totalLeads = 0;
+
+  renderBizList();
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('chatPanel').style.display = 'flex';
+
+  document.getElementById('topbarIcon').textContent = currentBiz.icon;
+  document.getElementById('topbarName').textContent = currentBiz.name;
+  document.getElementById('topbarDesc').textContent = `AI Agent: ${currentBiz.agentName} — ${currentBiz.type}`;
+
+  // Load config form
+  document.getElementById('cfgName').value = currentBiz.name;
+  document.getElementById('cfgType').value = currentBiz.type;
+  document.getElementById('cfgAgentName').value = currentBiz.agentName;
+  document.getElementById('cfgKnowledge').value = currentBiz.knowledge;
+  document.getElementById('cfgGoal').value = currentBiz.goal;
+  document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
+  updateDelayPreview();
+
+  // Stats
+  document.getElementById('statConv').textContent = currentBiz.stats.conv;
+  document.getElementById('statAnswered').textContent = currentBiz.stats.answered;
+  document.getElementById('statLeads').textContent = currentBiz.stats.leads;
+
+  // Quick scenarios
+  document.getElementById('quickReplies').innerHTML = currentBiz.scenarios.map(s => `
+    <div class="quick-reply-item" onclick="useScenario('${s.replace(/'/g,"\\'")}')">💬 ${s}</div>
+  `).join('');
+
+  // Welcome message
+  document.getElementById('messages').innerHTML = '';
+  appendMessage('ai', `Halo! Saya ${currentBiz.agentName}, asisten AI untuk ${currentBiz.name}. Ada yang bisa saya bantu? 😊`);
+
+  // Show config by default
+  configVisible = false;
+  toggleConfig();
+}
+
+function toggleConfig() {
+  configVisible = !configVisible;
+  document.getElementById('configPanel').style.display = configVisible ? 'flex' : 'none';
+}
+
+function saveConfig() {
+  if (!currentBiz) return;
+  currentBiz.name = document.getElementById('cfgName').value;
+  currentBiz.type = document.getElementById('cfgType').value;
+  currentBiz.agentName = document.getElementById('cfgAgentName').value;
+  currentBiz.knowledge = document.getElementById('cfgKnowledge').value;
+  currentBiz.goal = document.getElementById('cfgGoal').value;
+  currentBiz.responseDelay = document.getElementById('cfgDelay').value;
+
+  document.getElementById('topbarName').textContent = currentBiz.name;
+  document.getElementById('topbarDesc').textContent = `AI Agent: ${currentBiz.agentName} — ${currentBiz.type}`;
+
+  document.getElementById('messages').innerHTML = '';
+  conversationHistory = [];
+  appendMessage('ai', `Konfigurasi tersimpan! Saya ${currentBiz.agentName}, siap melayani pelanggan ${currentBiz.name}. 🎉`);
+
+  renderBizList();
+}
+
+// ===== DELAY LOGIC =====
+function getDelayMs(replyLength) {
+  const mode = currentBiz?.responseDelay || 'random';
+  if (mode === 'instant') return 0;
+  if (mode === '3') return 3000;
+  if (mode === '10') return 10000;
+  if (mode === '60') return 60000;
+  if (mode === 'random') return (3 + Math.random() * 12) * 1000;
+  if (mode === 'human') {
+    // ~30 karakter/detik typing speed, min 2s max 20s
+    const typingTime = Math.min(20000, Math.max(2000, replyLength * 33));
+    return typingTime;
+  }
+  return 0;
+}
+
+function updateDelayPreview() {
+  const val = document.getElementById('cfgDelay')?.value;
+  const el = document.getElementById('delayPreview');
+  if (!el) return;
+  const map = {
+    instant: '⚡ AI akan membalas secara instan — cocok untuk demo & testing.',
+    '3': '🕐 AI membalas setelah 3 detik — cukup cepat, masih terasa responsif.',
+    '10': '🕑 AI membalas setelah 10 detik — terasa seperti sedang membaca pesan.',
+    '60': '🕒 AI membalas setelah 1 menit — cocok jika ingin terasa seperti admin manusia.',
+    random: '🎲 Respon muncul 3–15 detik secara acak — terasa natural seperti dibalas manusia.',
+    human: '🧑 Durasi delay proporsional dengan panjang balasan — makin panjang jawaban, makin lama "mengetik".'
+  };
+  el.textContent = map[val] || '';
+}
+
+// ===== CHAT =====
+function appendMessage(role, text, time) {
+  const msgs = document.getElementById('messages');
+  const now = time || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  if (role === 'ai') {
+    div.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div>
+        <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+        <div class="msg-time">${currentBiz?.agentName || 'AI'} · ${now}</div>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div class="msg-avatar">👤</div>
+      <div>
+        <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+  }
+
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="typing-indicator">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !currentBiz) return;
+
+  input.value = '';
+  autoResize(input);
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+
+  showTyping();
+
+  try {
+    const systemPrompt = buildSystemPrompt();
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'Maaf, ada gangguan. Coba lagi ya.';
+
+    const delayMs = getDelayMs(reply.length);
+    if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
+
+    removeTyping();
+    appendMessage('ai', reply);
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+    // Update stats
+    totalAnswered++;
+    currentBiz.stats.answered++;
+    document.getElementById('statAnswered').textContent = currentBiz.stats.answered;
+
+    // Lead detection (simple keyword)
+    const leadKeywords = ['beli', 'daftar', 'bayar', 'langganan', 'booking', 'mau coba', 'harga', 'berapa', 'premium', 'download'];
+    if (leadKeywords.some(k => text.toLowerCase().includes(k))) {
+      currentBiz.stats.leads++;
+      document.getElementById('statLeads').textContent = currentBiz.stats.leads;
+    }
+
+  } catch (err) {
+    removeTyping();
+    appendMessage('ai', 'Maaf, koneksi bermasalah. Silakan coba lagi.');
+    console.error(err);
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+function buildSystemPrompt() {
+  const goalMap = {
+    convert: 'Utamakan mendorong pelanggan untuk melakukan booking, pembelian, atau pendaftaran. Tunjukkan nilai produk/layanan dengan hangat dan persuasif.',
+    support: 'Bantu pelanggan menyelesaikan masalah atau pertanyaan dengan ramah dan tuntas.',
+    onboarding: 'Panduan pengguna baru memahami cara kerja produk/layanan dengan sabar dan jelas.',
+    faq: 'Jawab pertanyaan umum secara ringkas, akurat, dan mudah dipahami.'
+  };
+
+  return `Kamu adalah ${currentBiz.agentName}, AI Agent untuk ${currentBiz.name} (${currentBiz.type}).
+
+MISI UTAMA: ${goalMap[currentBiz.goal] || goalMap.convert}
+
+PENGETAHUAN BISNIS:
+${currentBiz.knowledge}
+
+ATURAN PERCAKAPAN:
+- Gunakan bahasa Indonesia yang ramah, santai, dan natural — seperti chat WA sehari-hari
+- Jawab dengan singkat dan to the point, tidak perlu panjang lebar
+- Jika ada pertanyaan di luar konteks bisnis ini, arahkan kembali ke layanan yang tersedia
+- Jangan sebut bahwa kamu adalah AI jika tidak ditanya
+- Gunakan emoji secukupnya agar terasa manusiawi
+- Jika pelanggan berminat, arahkan ke langkah konkret berikutnya (booking, download, dll)`;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function useScenario(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+function setMode(mode, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addBusiness() {
+  const name = prompt('Nama bisnis baru:');
+  if (!name) return;
+  const id = 'biz_' + Date.now();
+  BUSINESSES.push({
+    id, name, type: 'Bisnis baru', icon: '🏢',
+    agentName: 'Asisten', goal: 'convert',
+    knowledge: 'Isi informasi bisnis ini di panel konfigurasi.',
+    scenarios: ['Apa yang ditawarkan?', 'Berapa harganya?'],
+    stats: { conv: 0, answered: 0, leads: 0 }
+  });
+  renderBizList();
+  selectBiz(id);
+}
+
+function copyEmbedCode() {
+  const code = `<!-- AgentHub: ${currentBiz?.name} -->
+<script src="https://agenthub.app/widget.js"
+  data-business="${currentBiz?.id}"
+  data-agent="${currentBiz?.agentName}"
+  data-channel="web">
+<\/script>`;
+  navigator.clipboard.writeText(code).then(() => alert('Kode embed disalin! Tempel ke website atau landing page Anda.'));
+}
+
+init();
+</script>
+</body>
+</html>
