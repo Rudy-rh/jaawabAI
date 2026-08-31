@@ -788,8 +788,37 @@ let configVisible = false;
 let totalAnswered = 0;
 let totalLeads = 0;
 
+// ===== LOCALSTORAGE PERSISTENCE =====
+function saveBiznesToStorage() {
+  const data = BUSINESSES.map(b => ({
+    id: b.id, name: b.name, type: b.type, icon: b.icon,
+    agentName: b.agentName, goal: b.goal, responseDelay: b.responseDelay,
+    knowledge: b.knowledge, scenarios: b.scenarios,
+    stats: b.stats
+  }));
+  localStorage.setItem('jaawab_businesses', JSON.stringify(data));
+}
+
+function loadBiznessFromStorage() {
+  try {
+    const saved = localStorage.getItem('jaawab_businesses');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    // Update existing + tambah bisnis baru dari storage
+    data.forEach(saved => {
+      const existing = BUSINESSES.find(b => b.id === saved.id);
+      if (existing) {
+        Object.assign(existing, saved);
+      } else {
+        BUSINESSES.push(saved);
+      }
+    });
+  } catch(e) { console.error('Load storage error:', e); }
+}
+
 // ===== INIT =====
 function init() {
+  loadBiznessFromStorage();
   renderBizList();
 }
 
@@ -873,6 +902,7 @@ function saveConfig() {
   conversationHistory = [];
   appendMessage('ai', `Konfigurasi tersimpan! Saya ${currentBiz.agentName}, siap melayani pelanggan ${currentBiz.name}. 🎉`);
 
+  saveBiznesToStorage();
   renderBizList();
 }
 
@@ -1125,10 +1155,12 @@ function addBusiness() {
   BUSINESSES.push({
     id, name, type: 'Bisnis baru', icon: '🏢',
     agentName: 'Asisten', goal: 'convert',
+    responseDelay: 'random',
     knowledge: 'Isi informasi bisnis ini di panel konfigurasi.',
     scenarios: ['Apa yang ditawarkan?', 'Berapa harganya?'],
     stats: { conv: 0, answered: 0, leads: 0 }
   });
+  saveBiznesToStorage();
   renderBizList();
   selectBiz(id);
 }
