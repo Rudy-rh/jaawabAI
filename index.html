@@ -1228,7 +1228,7 @@ function saveApiKey() {
     localStorage.setItem('jaawab_provider', 'claude');
   } else {
     const key = document.getElementById('geminiKeyInput').value.trim();
-    if (!key.startsWith('AIza')) { alert('Gemini API key harus diawali AIza'); return; }
+    if (key.length < 10) { alert('API key terlalu pendek, coba copy ulang'); return; }
     localStorage.setItem('jaawab_gemini_key', key);
     localStorage.setItem('jaawab_provider', 'gemini');
   }
