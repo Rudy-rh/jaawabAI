@@ -410,6 +410,155 @@
   .empty-title { font-size: 15px; font-weight: 500; color: var(--text); }
   .empty-desc { font-size: 13px; max-width: 300px; line-height: 1.5; }
 
+
+  /* ===== KNOWLEDGE MANAGER ===== */
+  .kb-manager { display: flex; flex-direction: column; gap: 0; }
+  
+  .kb-category {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  
+  .kb-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface2);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .kb-category-header:hover { background: var(--border); }
+  
+  .kb-category-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .kb-category-arrow {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .kb-category.open .kb-category-arrow { transform: rotate(90deg); }
+  
+  .kb-category-body {
+    display: none;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .kb-category.open .kb-category-body { display: block; }
+  
+  .kb-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .kb-item:last-child { border-bottom: none; }
+  
+  .kb-item-label {
+    font-size: 11px;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+    padding-top: 6px;
+  }
+  
+  .kb-item-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    outline: none;
+    resize: vertical;
+    min-height: 28px;
+    transition: border-color 0.15s;
+    line-height: 1.4;
+  }
+  .kb-item-input:focus { border-color: var(--accent); }
+  
+  .kb-add-item {
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .kb-add-item:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .kb-delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .kb-delete-btn:hover { color: #e74c3c; }
+  
+  .kb-export-btn {
+    width: 100%;
+    padding: 9px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .kb-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .kb-tab-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  
+  .kb-tab {
+    flex: 1;
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: var(--font);
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .kb-tab.active { background: var(--surface2); color: var(--text); }
+
   /* ===== SCROLLBAR ===== */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -512,17 +661,20 @@
 
         <div class="config-section">
           <div class="config-section-title">Knowledge Base</div>
-          <div class="config-field">
-            <div class="config-label">Informasi bisnis & layanan</div>
-            <textarea class="config-textarea" id="cfgKnowledge" style="min-height:140px"
-              placeholder="Masukkan semua info yang perlu diketahui AI:
-- Layanan & harga
-- Jam operasional
-- Lokasi / cara pesan
-- FAQ umum
-- Promo aktif
-- Dan lainnya..."></textarea>
+          <div class="kb-tab-row">
+            <button class="kb-tab active" onclick="switchKbTab('structured', this)">📋 Terstruktur</button>
+            <button class="kb-tab" onclick="switchKbTab('raw', this)">📝 Teks Bebas</button>
           </div>
+          
+          <!-- Structured KB -->
+          <div id="kbStructured" class="kb-manager"></div>
+          
+          <!-- Raw KB (hidden by default) -->
+          <div id="kbRaw" style="display:none">
+            <textarea class="config-textarea" id="cfgKnowledge" style="min-height:200px"
+              placeholder="Masukkan semua info bisnis di sini..."></textarea>
+          </div>
+        </div>
           <div class="config-field">
             <div class="config-label">Tujuan utama AI Agent</div>
             <select class="config-select" id="cfgGoal">
@@ -756,6 +908,9 @@ function selectBiz(id) {
   updateDelayPreview();
   document.getElementById('cfgFonnteToken').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgKasirNumber').value = currentBiz.kasir_number || '';
+  
+  // Init KB Manager
+  renderKbManager(currentBiz.id);
 
   // Stats
   document.getElementById('statConv').textContent = currentBiz.stats.conv;
@@ -801,6 +956,252 @@ function saveConfig() {
 
   saveBiznesToStorage();
   renderBizList();
+}
+
+
+// ===== KNOWLEDGE MANAGER =====
+
+// Struktur kategori default per bisnis
+const KB_CATEGORIES = {
+  barbershop: [
+    { id: 'identitas', icon: '🏪', label: 'Identitas Bisnis', items: [
+      { key: 'nama', label: 'Nama', value: 'Storee Barbershop Sorong' },
+      { key: 'tagline', label: 'Tagline', value: 'Comfort Yourself' },
+      { key: 'jenis', label: 'Jenis', value: 'Barbershop modern pria dan wanita' },
+      { key: 'zona', label: 'Timezone', value: 'WIT (UTC+9)' }
+    ]},
+    { id: 'lokasi', icon: '📍', label: 'Lokasi & Jam', items: [
+      { key: 'alamat', label: 'Alamat', value: 'Jl. Jenderal Ahmad Yani No.21B, Kota Sorong, Papua Barat Daya' },
+      { key: 'jam', label: 'Jam Buka', value: 'Setiap hari 11.00–21.45 WIT' },
+      { key: 'wa_kasir', label: 'WA Kasir', value: '0811485774' }
+    ]},
+    { id: 'promo', icon: '🎁', label: 'Promo & Diskon', items: [
+      { key: 'diskon_haircut', label: 'Diskon Hair Cut', value: 'Download app Storee Barber → dapatkan ID QR Code → tunjukkan ke kasir. Hair Cut jadi Rp 90.000 (diskon 10%). HANYA untuk Hair Cut.' }
+    ]},
+    { id: 'layanan', icon: '✂️', label: 'Layanan & Harga', items: [
+      { key: 'haircut', label: 'Hair Cut', value: 'Rp 90rb (app) / Rp 100rb' },
+      { key: 'highlight', label: 'Highlight', value: 'Virgin+Ozone Rp210rb | Abu+Ozone Rp280rb | Fashion Alfaparf+Ozone Rp380rb' },
+      { key: 'coloring_basic', label: 'Coloring Basic', value: 'Standar Rp160-180rb | Sebahu Rp190-210rb | Lebih sebahu mulai Rp210-240rb' },
+      { key: 'coloring_reguler', label: 'Coloring Reguler', value: '0.3 Rp340rb | 0.6 Rp550rb | 1 mulai Rp690rb' },
+      { key: 'coloring_premium', label: 'Coloring Premium', value: '0.3 Rp720rb | 0.6 Rp940rb | 1 mulai Rp1.230rb' },
+      { key: 'lainnya', label: 'Lainnya', value: 'Hair Tatoo mulai Rp30rb | Blow Rp40rb | Catok Rp50rb | Shaving Rp30rb | Hair Wash Rp20rb' },
+      { key: 'keriting', label: 'Keriting', value: 'Light Rp250rb | Standar Rp360rb | Sebahu Rp460rb | Lebih sebahu mulai Rp560rb' },
+      { key: 'treatment', label: 'Hair Spa Loreal', value: 'Standar Rp140rb | Sebahu Rp150rb | Lebih sebahu Rp160rb' },
+      { key: 'tradisional', label: 'Treatment Trad.', value: 'Standar Rp120rb | Sebahu Rp130rb | Lebih sebahu Rp140rb' },
+      { key: 'keratin', label: 'Keratin', value: 'Standar Rp140rb | Sebahu Rp150rb | Lebih sebahu Rp160rb' },
+      { key: 'masking', label: 'Masking Plus', value: 'Standar Rp110rb | Plus Pijat Wajah Rp130rb' },
+      { key: 'smoothing', label: 'Smoothing', value: 'Standar Rp370rb | Sebahu Rp460rb | Lebih sebahu mulai Rp530rb' },
+      { key: 'keratin_h4', label: 'Keratin H+4', value: 'Standar Rp410rb | Sebahu Rp510rb | Lebih sebahu mulai Rp580rb' },
+      { key: 'ozone', label: 'Ozone O3', value: 'Rp50rb' },
+      { key: 'massage', label: 'Massage', value: 'Rp50rb' },
+      { key: 'alis_poni', label: 'Alis/Poni', value: 'Bentuk Alis Rp20rb | Potong Poni Rp20rb' }
+    ]},
+    { id: 'produk', icon: '🧴', label: 'Produk Dijual', items: [
+      { key: 'pomade', label: 'Pomade', value: 'Starley Brewing Rp190rb | Pharoah Rp200rb | Murray Super Light Rp150rb | Murray La Em Rp190rb | Murray Nu Nail Rp150rb | Murray Hair Glo Rp150rb | Barbers Rp160rb | Chief Blue Rp240rb' },
+      { key: 'perawatan', label: 'Perawatan', value: 'Serum Aminexil Loreal 6ml Rp90rb | Minoxidil Canada 60ml Rp220rb | Minoxidil FOAM 60ml Rp310rb | Hair Tonic 100ml Rp80rb' }
+    ]},
+    { id: 'barberman', icon: '💈', label: 'Jadwal Barberman', items: [
+      { key: 'senin', label: 'Senin', value: 'Ahmad, Onny, Wemmy (Fajar libur)' },
+      { key: 'selasa', label: 'Selasa', value: 'Ahmad, Fajar, Onny (Wemmy libur)' },
+      { key: 'rabu', label: 'Rabu', value: 'Fajar, Onny, Wemmy (Ahmad libur)' },
+      { key: 'kamis', label: 'Kamis', value: 'Ahmad, Fajar, Wemmy (Onny libur)' },
+      { key: 'jumat', label: 'Jumat', value: 'Ahmad, Fajar, Onny, Wemmy (semua aktif)' },
+      { key: 'sabtu', label: 'Sabtu', value: 'Ahmad, Fajar, Onny, Wemmy (semua aktif)' },
+      { key: 'minggu', label: 'Minggu', value: 'Ahmad, Fajar, Onny, Wemmy (semua aktif)' }
+    ]},
+    { id: 'booking', icon: '📅', label: 'Sistem Booking', items: [
+      { key: 'cara', label: 'Cara', value: 'Tanya 7 data sekaligus: 1)Nama, 2)HP, 3)Jumlah orang, 4)Layanan, 5)Tanggal, 6)Jam datang (min 1 jam dari sekarang WIT), 7)Barberman pilihan' },
+      { key: 'min_waktu', label: 'Min. Waktu', value: 'Booking minimal 1 jam sebelum kedatangan. Kurang dari 1 jam = antrian biasa' },
+      { key: 'notif_kasir', label: 'Notif Kasir', value: 'Setelah konfirmasi, tambahkan tag [NOTIF_KASIR] lalu format notif ke kasir 0811485774' }
+    ]},
+    { id: 'medsos', icon: '📱', label: 'Media Sosial', items: [
+      { key: 'ig', label: 'Instagram', value: '@storeebarber.sorong' },
+      { key: 'fb', label: 'Facebook', value: 'Storee Barbershop' },
+      { key: 'tiktok', label: 'TikTok', value: '@storeebarber' },
+      { key: 'web', label: 'Website', value: 'storeebarbershop.com' },
+      { key: 'app', label: 'Aplikasi', value: 'Storee Barber (Play Store)' }
+    ]}
+  ],
+  habitkeluarga: [
+    { id: 'identitas', icon: '🏪', label: 'Identitas', items: [
+      { key: 'nama', label: 'Nama', value: 'Habit Keluarga X' },
+      { key: 'deskripsi', label: 'Deskripsi', value: 'Aplikasi habit tracking untuk keluarga, tim, dan organisasi' }
+    ]},
+    { id: 'fitur', icon: '⚡', label: 'Fitur Utama', items: [
+      { key: 'anggota', label: 'Anggota', value: 'Owner bisa tambah 1-100 anggota' },
+      { key: 'habit', label: 'Habit', value: 'Habit harian, mingguan, bulanan' },
+      { key: 'reward', label: 'Reward', value: 'Reward system fisik dan spiritual' },
+      { key: 'laporan', label: 'Laporan', value: 'Pencapaian individual dan kolektif' },
+      { key: 'coowner', label: 'Co-owner', value: 'Istri/asisten bisa ikut pantau' },
+      { key: 'ai', label: 'AI Insight', value: 'Rekomendasi habit (premium)' }
+    ]},
+    { id: 'harga', icon: '💰', label: 'Harga', items: [
+      { key: 'gratis', label: 'Gratis', value: 'Seumur hidup: 1 anggota, 4 habit tambahan, fitur terbatas' },
+      { key: 'premium', label: 'Premium', value: 'Rp 100.000/bulan hingga 100 anggota. Rp 20rb per orang untuk 5 anggota' }
+    ]},
+    { id: 'pengguna', icon: '👥', label: 'Target Pengguna', items: [
+      { key: 'target', label: 'Target', value: 'Orang tua, manager, guru, pendidik, circle pertemanan' }
+    ]}
+  ],
+  bubur: [
+    { id: 'identitas', icon: '🏪', label: 'Identitas', items: [
+      { key: 'nama', label: 'Nama', value: 'Bubur Ayam Baba' },
+      { key: 'tagline', label: 'Tagline', value: 'Rasanya Beda Bikin Nagih! Makan Kenyang Hati Senang Harga Pas!' }
+    ]},
+    { id: 'lokasi', icon: '📍', label: 'Lokasi & Jam', items: [
+      { key: 'alamat', label: 'Alamat', value: 'Jl. Ahmad Yani, Depan Masjid Raya Al-Akbar, Kota Sorong' },
+      { key: 'jam', label: 'Jam Buka', value: 'Setiap hari 05.30-11.00 WIT' }
+    ]},
+    { id: 'menu', icon: '🍚', label: 'Menu', items: [
+      { key: 'utama', label: 'Utama', value: 'Bubur Ayam Khas Jakarta (kerupuk & kecap dari Jakarta)' },
+      { key: 'pelengkap', label: 'Pelengkap', value: 'Sate Hati & Ampela, Sate Usus, Sate Telur Puyuh, Emping Goreng, Rempeyek' },
+      { key: 'gratis', label: 'GRATIS', value: 'Teh Hangat + Pisang Raja untuk setiap pelanggan' }
+    ]},
+    { id: 'keunggulan', icon: '⭐', label: 'Keunggulan', items: [
+      { key: 'rasa', label: 'Rasa', value: 'Otentik khas Jakarta, kerupuk & kecap langsung dari Jakarta' },
+      { key: 'tempat', label: 'Tempat', value: 'Nyaman & luas, banyak meja dan kursi' },
+      { key: 'kondisi', label: 'Kondisi', value: 'Bersih, teduh - tidak kepanasan/kehujanan' },
+      { key: 'harga', label: 'Harga', value: 'Terjangkau / pas di kantong' }
+    ]},
+    { id: 'respons', icon: '💬', label: 'Cara Merespons', items: [
+      { key: 'gaya', label: 'Gaya', value: 'Hangat, antusias, seperti pemilik warung yang ramah' },
+      { key: 'ajakan', label: 'Ajakan', value: 'Selalu ajak datang langsung, sebut lokasi & jam buka, ingatkan Teh Hangat + Pisang Raja GRATIS' }
+    ]}
+  ]
+};
+
+// State KB terstruktur per bisnis
+let kbData = {};
+
+function initKbData(bizId) {
+  const storageKey = 'jaawab_kb_' + bizId;
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try { kbData[bizId] = JSON.parse(saved); return; } catch(e) {}
+  }
+  // Default dari KB_CATEGORIES
+  kbData[bizId] = JSON.parse(JSON.stringify(KB_CATEGORIES[bizId] || []));
+}
+
+function saveKbData(bizId) {
+  localStorage.setItem('jaawab_kb_' + bizId, JSON.stringify(kbData[bizId] || []));
+}
+
+function renderKbManager(bizId) {
+  const container = document.getElementById('kbStructured');
+  if (!container) return;
+  
+  initKbData(bizId);
+  const categories = kbData[bizId] || [];
+  
+  container.innerHTML = categories.map((cat, catIdx) => `
+    <div class="kb-category" id="kbCat_${catIdx}">
+      <div class="kb-category-header" onclick="toggleKbCategory(${catIdx})">
+        <div class="kb-category-title">
+          <span>${cat.icon}</span>
+          <span>${cat.label}</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:400">${cat.items.length} item</span>
+        </div>
+        <span class="kb-category-arrow">▶</span>
+      </div>
+      <div class="kb-category-body">
+        ${cat.items.map((item, itemIdx) => `
+          <div class="kb-item" id="kbItem_${catIdx}_${itemIdx}">
+            <div class="kb-item-label">${item.label}</div>
+            <textarea class="kb-item-input" rows="1"
+              onchange="updateKbItem(${catIdx}, ${itemIdx}, this.value)"
+              oninput="autoResizeKb(this)"
+            >${item.value}</textarea>
+            <button class="kb-delete-btn" onclick="deleteKbItem(${catIdx}, ${itemIdx})" title="Hapus">✕</button>
+          </div>
+        `).join('')}
+        <button class="kb-add-item" onclick="addKbItem(${catIdx})">+ Tambah item</button>
+      </div>
+    </div>
+  `).join('') + `
+    <button class="kb-export-btn" onclick="exportAndDownload()">⬇️ Export & Download index.html</button>
+  `;
+  
+  // Auto-resize semua textarea
+  setTimeout(() => {
+    container.querySelectorAll('.kb-item-input').forEach(autoResizeKb);
+  }, 50);
+}
+
+function toggleKbCategory(catIdx) {
+  const el = document.getElementById('kbCat_' + catIdx);
+  el.classList.toggle('open');
+}
+
+function updateKbItem(catIdx, itemIdx, value) {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  kbData[currentBiz.id][catIdx].items[itemIdx].value = value;
+  saveKbData(currentBiz.id);
+  syncKbToKnowledge();
+}
+
+function deleteKbItem(catIdx, itemIdx) {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  kbData[currentBiz.id][catIdx].items.splice(itemIdx, 1);
+  saveKbData(currentBiz.id);
+  renderKbManager(currentBiz.id);
+  syncKbToKnowledge();
+}
+
+function addKbItem(catIdx) {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const label = prompt('Nama label (contoh: Promo Ramadan):');
+  if (!label) return;
+  kbData[currentBiz.id][catIdx].items.push({ key: 'item_' + Date.now(), label, value: '' });
+  saveKbData(currentBiz.id);
+  renderKbManager(currentBiz.id);
+}
+
+function autoResizeKb(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+function syncKbToKnowledge() {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  // Bangun knowledge string dari structured data
+  let kb = '';
+  kbData[currentBiz.id].forEach(cat => {
+    if (cat.items.length === 0) return;
+    kb += cat.label.toUpperCase() + ':\n';
+    cat.items.forEach(item => {
+      if (item.value) kb += item.label + ': ' + item.value + '\n';
+    });
+    kb += '\n';
+  });
+  currentBiz.knowledge = kb.trim();
+}
+
+function switchKbTab(tab, btn) {
+  document.querySelectorAll('.kb-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  if (tab === 'structured') {
+    document.getElementById('kbStructured').style.display = 'flex';
+    document.getElementById('kbStructured').style.flexDirection = 'column';
+    document.getElementById('kbRaw').style.display = 'none';
+    if (currentBiz) renderKbManager(currentBiz.id);
+  } else {
+    document.getElementById('kbStructured').style.display = 'none';
+    document.getElementById('kbRaw').style.display = 'block';
+    // Sync raw dari knowledge
+    const raw = document.getElementById('cfgKnowledge');
+    if (raw && currentBiz) raw.value = currentBiz.knowledge;
+  }
+}
+
+function exportAndDownload() {
+  // Sync semua bisnis ke knowledge
+  if (currentBiz) syncKbToKnowledge();
+  saveBiznesToStorage();
+  
+  // Buat versi file dengan knowledge terbaru
+  alert('Fitur export akan segera tersedia. Untuk sekarang, perubahan sudah tersimpan di browser Anda.');
 }
 
 // ===== DELAY LOGIC =====
