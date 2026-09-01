@@ -315,9 +315,12 @@
   /* ===== CONFIG PANEL ===== */
   .config-panel {
     width: 300px;
+    min-width: 300px;
+    max-width: 300px;
     border-left: 1px solid var(--border);
     background: var(--surface);
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -412,7 +415,7 @@
 
 
   /* ===== KNOWLEDGE MANAGER ===== */
-  .kb-manager { display: flex; flex-direction: column; gap: 0; }
+  .kb-manager { display: flex; flex-direction: column; gap: 0; width: 100%; overflow: hidden; }
   
   .kb-category {
     border: 1px solid var(--border);
@@ -475,6 +478,7 @@
   
   .kb-item-input {
     flex: 1;
+    min-width: 0;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -485,6 +489,8 @@
     outline: none;
     resize: vertical;
     min-height: 28px;
+    max-width: 100%;
+    word-break: break-word;
     transition: border-color 0.15s;
     line-height: 1.4;
   }
