@@ -112,6 +112,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .modal-note{font-size:11px;color:var(--muted);margin-top:10px}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.kb-expand-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:3px 6px;line-height:1;transition:color .15s;flex-shrink:0}
+.kb-expand-btn:hover{color:var(--accent)}
+.editor-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center}
+.editor-modal.open{display:flex}
+.editor-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:90vw;max-width:800px;height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.editor-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.editor-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.editor-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;line-height:1}
+.editor-close:hover{color:var(--text)}
+.editor-textarea{flex:1;background:var(--surface2);border:none;padding:16px 18px;color:var(--text);font-family:var(--font);font-size:13px;resize:none;outline:none;line-height:1.7;width:100%;box-sizing:border-box}
+.editor-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--border);flex-shrink:0}
+.editor-save{padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.editor-cancel{padding:8px 14px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:var(--font)}
 </style>
 </head>
 <body>
@@ -239,6 +252,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="modal-note">Key tersimpan hanya di browser Anda.</div>
   </div>
 </div>
+<!-- Editor Modal -->
+<div class="editor-modal" id="editorModal">
+  <div class="editor-box">
+    <div class="editor-head">
+      <div class="editor-title">
+        <span id="editorIcon"></span>
+        <span id="editorLabel"></span>
+      </div>
+      <button class="editor-close" onclick="closeEditor()">&#x2715;</button>
+    </div>
+    <textarea class="editor-textarea" id="editorTextarea" placeholder="Ketik atau paste informasi di sini..."></textarea>
+    <div class="editor-foot">
+      <button class="editor-cancel" onclick="closeEditor()">Batal</button>
+      <button class="editor-save" onclick="saveEditor()">&#x2713; Simpan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const BUSINESSES = [
   {id:"barbershop",name:"Storee Barbershop",type:"Barbershop & grooming",icon:"✂️",agentName:"Rangga",goal:"convert",responseDelay:"random",fonnte_token:"TiuEHauA9BPGFDQedaiY",kasir_number:"0811485774",barberman_contacts:{Ahmad:"085252444739",Fajar:"082398191580",Onny:"089676637788",Wemmy:"081324764407"},knowledge:"Storee Barbershop Sorong - Comfort Yourself. Barbershop modern di Kota Sorong. Zona waktu WIT.\nAlamat: Jl. Jenderal Ahmad Yani No.21B, Kota Sorong. Jam: 11.00-21.45 WIT. WA Kasir: 0811485774.\nGoogle Maps: https://maps.app.goo.gl/storeebarber (SELALU sertakan link ini saat ditanya lokasi/alamat)\nPROMO: Diskon 10% Hair Cut (Rp 100.000 jadi Rp 90.000). Download app Storee Barber dapatkan ID QR Code tunjukkan ke kasir. HANYA untuk Hair Cut.\nHair Cut Rp 90rb (app)/100rb. Highlight Virgin+Ozone Rp210rb Abu+Ozone Rp280rb Fashion Alfaparf+Ozone Rp380rb. Coloring Basic+Ozone standar Rp160-180rb sebahu Rp190-210rb lebih sebahu mulai Rp210-240rb. Fashion Reguler+Ozone 0.3 Rp340rb 0.6 Rp550rb 1 mulai Rp690rb. Fashion Premium+Ozone 0.3 Rp720rb 0.6 Rp940rb 1 mulai Rp1.230rb. Hair Tatoo mulai Rp30rb Blow Rp40rb Catok Rp50rb Shaving Rp30rb Hair Wash Rp20rb. Keriting Light Rp250rb Standar Rp360rb Sebahu Rp460rb Lebih sebahu mulai Rp560rb. Hair Spa Loreal standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Tradisional standar Rp120rb sebahu Rp130rb lebih sebahu Rp140rb. Keratin standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Masking Plus standar Rp110rb plus pijat wajah Rp130rb. Smoothing standar Rp370rb sebahu Rp460rb lebih sebahu mulai Rp530rb. Keratin H+4 standar Rp410rb sebahu Rp510rb lebih sebahu mulai Rp580rb. Ozone O3 Rp50rb Massage Rp50rb Bentuk Alis Rp20rb Potong Poni Rp20rb.\nProduk: Pomade Starley Brewing Rp190rb Pharoah Rp200rb Murray Super Light/Nu Nail/Hair Glo Rp150rb Murray La Em Rp190rb Barbers Rp160rb Chief Blue Rp240rb. Serum Aminexil Loreal 6ml Rp90rb Minoxidil Canada 60ml Rp220rb Minoxidil FOAM 60ml Rp310rb Hair Tonic 100ml Rp80rb.\nJADWAL BARBERMAN: Senin Ahmad Onny Wemmy (Fajar libur). Selasa Ahmad Fajar Onny (Wemmy libur). Rabu Fajar Onny Wemmy (Ahmad libur). Kamis Ahmad Fajar Wemmy (Onny libur). Jumat-Minggu semua aktif.\nBOOKING: Tanyakan 7 data sekaligus: 1)Nama 2)HP 3)Jumlah orang 4)Layanan 5)Tanggal 6)Jam datang min 1 jam dari sekarang WIT 7)Barberman pilihan. Jika libur tawarkan barber lain atau ganti hari. Setelah data lengkap dan dikonfirmasi, WAJIB tambahkan tag [NOTIF_KASIR] diikuti detail booking.\nMedsos: IG @storeebarber.sorong FB Storee Barbershop TT @storeebarber Web storeebarbershop.com App Storee Barber Play Store.\nPANDUAN: Santai hangat natural seperti WA. Lokasi SELALU sertakan Google Maps. Booking tanyakan 7 data sekaligus. Barberman libur tawarkan alternatif. Diskon download app QR Code ke kasir HANYA Hair Cut.",scenarios:["Berapa harga potong rambut?","Jam buka sampai jam berapa?","Cara booking gimana?","Ada promo apa sekarang?","Mau coloring, berapa harganya?","Rabu ada yang libur tidak?"],stats:{conv:12,answered:47,leads:8}},
@@ -497,6 +528,43 @@ function syncKb() {
 }
 
 function autoResizeKb(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }
+
+var _editorCatIdx = -1;
+
+function openEditor(ci) {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const cat = kbData[currentBiz.id][ci];
+  if (!cat) return;
+  _editorCatIdx = ci;
+  document.getElementById('editorIcon').textContent = cat.icon;
+  document.getElementById('editorLabel').textContent = cat.label;
+  document.getElementById('editorTextarea').value = cat.text || '';
+  document.getElementById('editorModal').classList.add('open');
+  setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
+}
+
+function closeEditor() {
+  document.getElementById('editorModal').classList.remove('open');
+  _editorCatIdx = -1;
+}
+
+function saveEditor() {
+  if (_editorCatIdx < 0 || !currentBiz || !kbData[currentBiz.id]) return;
+  const val = document.getElementById('editorTextarea').value;
+  kbData[currentBiz.id][_editorCatIdx].text = val;
+  saveKb(currentBiz.id);
+  syncKb();
+  // Update textarea di panel juga
+  const area = document.querySelector('#kbc_' + _editorCatIdx + ' .kb-area');
+  if (area) { area.value = val; autoResizeKb(area); }
+  closeEditor();
+}
+
+// Tutup modal kalau klik di luar
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('editorModal');
+  if (e.target === modal) closeEditor();
+});
 
 function switchKbTab(tab, btn) {
   document.querySelectorAll('.kb-tab').forEach(b => b.classList.remove('active'));
