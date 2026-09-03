@@ -446,7 +446,7 @@ function renderKbManager(bizId) {
           <label class="kb-file-btn">&#128196; Upload PDF/Gambar
             <input type="file" accept=".pdf,image/*" style="display:none" onchange="handleKbFile(${ci},this)">
           </label>
-          <span class="kb-file-hint">AI baca &amp; ekstrak otomatis</span>
+          <button class="kb-expand-btn" onclick="openEditor(${ci})" title="Edit layar penuh">&#x26F6; Perluas</button>
         </div>
       </div>
     </div>`).join('') + '<button class="kb-add-cat" onclick="addKbCat()">+ Tambah kategori</button>';
