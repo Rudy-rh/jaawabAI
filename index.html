@@ -163,6 +163,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="chat-wrap" id="chatWrap" style="display:none">
         <div class="chat-head">
           <div><div class="chat-title">Preview percakapan AI Agent</div><div class="chat-sub">Simulasi dari sisi pelanggan</div></div>
+          <button class="icon-btn" style="width:auto;padding:0 8px;font-size:11px" title="Hapus riwayat percakapan preview ini" onclick="resetPreviewConversation()">&#8635; Reset chat</button>
         </div>
         <div class="messages" id="messages"></div>
         <div class="input-area">
@@ -364,6 +365,13 @@ function selectBiz(id) {
   document.getElementById('messages').innerHTML = '';
   appendMsg('ai', 'Halo! Saya '+currentBiz.agentName+', asisten AI untuk '+currentBiz.name+'. Ada yang bisa saya bantu? 😊');
   loadCfgForm();
+  cleanupOldConversations();
+  loadConversationHistory(currentBiz.id, getCustomerId()).then(function(history) {
+    if (history.length === 0) return;
+    // Tampilkan histori lama di atas sapaan (biar keliatan nyambung dari sebelumnya)
+    history.forEach(function(m) { appendMsg(m.role === 'assistant' ? 'ai' : 'user', m.content); });
+    convHistory = history.slice();
+  });
 }
 
 function toggleCfg() {
@@ -887,9 +895,11 @@ async function sendMsg() {
   document.getElementById('sendBtn').disabled = true;
   appendMsg('user', text);
   convHistory.push({role:'user', content:text});
+  saveConversationMessage(currentBiz.id, getCustomerId(), 'user', text);
   showTyping();
   try {
     const prompt = buildPrompt();
+    const historyForApi = convHistory.slice(-CONV_HISTORY_LIMIT);
     const prov = localStorage.getItem('jaawab_provider') || 'gemini';
     const gk = localStorage.getItem('jaawab_gemini_key');
     const ck = localStorage.getItem('jaawab_api_key');
@@ -900,13 +910,13 @@ async function sendMsg() {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {'Content-Type':'application/json','x-api-key':ck,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:prompt,messages:convHistory})
+        body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:prompt,messages:historyForApi})
       });
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       reply = d.content?.[0]?.text || 'Maaf, ada gangguan.';
     } else {
-      const msgs2 = convHistory.map(m => ({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
+      const msgs2 = historyForApi.map(m => ({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({system_instruction:{parts:[{text:prompt}]}, contents:msgs2, generationConfig:{maxOutputTokens:1000}})
@@ -920,6 +930,7 @@ async function sendMsg() {
     removeTyping();
     appendMsg('ai', reply);
     convHistory.push({role:'assistant', content:reply});
+    let savedReply = reply;
     if (currentBiz.stats) {
       currentBiz.stats.answered++;
       document.getElementById('statAns').textContent = currentBiz.stats.answered;
@@ -943,7 +954,9 @@ async function sendMsg() {
         lastBubble.innerHTML = fullReply.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       }
       if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih + penutup;
+      savedReply = replyBersih + penutup;
     }
+    saveConversationMessage(currentBiz.id, getCustomerId(), 'assistant', savedReply);
   } catch(e) {
     removeTyping();
     appendMsg('ai', 'Error: ' + (e.message || 'Koneksi bermasalah.'));
@@ -1060,6 +1073,66 @@ async function saveKbToDB(bizId, categories) {
     prefer: "return=minimal",
     body: JSON.stringify(rows)
   });
+}
+
+// ==================== MEMORY PERCAKAPAN ====================
+const CONV_HISTORY_LIMIT = 20;      // maksimal pesan yang dikirim ke AI sebagai konteks
+const CONV_SESSION_GAP_HOURS = 6;   // kalau jeda lebih dari ini, dianggap sesi baru
+const CONV_RETENTION_DAYS = 30;     // histori lebih tua dari ini otomatis dibersihkan
+
+function getCustomerId() {
+  // Untuk chat preview di platform (internal), pakai id sesi yang bisa direset kapan saja.
+  // Nanti kalau webhook WA sudah aktif, ganti dengan nomor WA pelanggan asli (permanen per pelanggan).
+  let sid = localStorage.getItem('jaawab_preview_session');
+  if (!sid) {
+    sid = 'preview_' + Date.now();
+    localStorage.setItem('jaawab_preview_session', sid);
+  }
+  return sid;
+}
+
+async function loadConversationHistory(bizId, customerId) {
+  const data = await sbFetch(
+    "conversations?business_id=eq." + bizId +
+    "&customer_id=eq." + encodeURIComponent(customerId) +
+    "&order=created_at.desc&limit=" + CONV_HISTORY_LIMIT
+  );
+  if (!data || !data.length) return [];
+  data.reverse(); // balik urutan jadi lama -> baru
+
+  // Cek jeda waktu sejak pesan terakhir; kalau kelamaan, anggap sesi baru (jangan dipakai)
+  const lastMsg = data[data.length - 1];
+  const gapHours = (Date.now() - new Date(lastMsg.created_at).getTime()) / 36e5;
+  if (gapHours > CONV_SESSION_GAP_HOURS) return [];
+
+  return data.map(function(row) { return { role: row.role, content: row.content }; });
+}
+
+async function saveConversationMessage(bizId, customerId, role, content) {
+  await sbFetch("conversations", {
+    method: "POST",
+    prefer: "return=minimal",
+    body: JSON.stringify([{ business_id: bizId, customer_id: customerId, role: role, content: content }])
+  });
+}
+
+async function cleanupOldConversations() {
+  // Hanya boleh menghapus baris yang SUDAH lewat masa retensi (dijaga oleh RLS di Supabase,
+  // lihat setup_conversations.sql) — jadi walau key publik dipakai, chat yang masih baru tetap aman.
+  const cutoff = new Date(Date.now() - CONV_RETENTION_DAYS * 24 * 3600 * 1000).toISOString();
+  await sbFetch("conversations?created_at=lt." + encodeURIComponent(cutoff), {
+    method: "DELETE", prefer: "return=minimal"
+  }).catch(function() {});
+}
+
+function resetPreviewConversation() {
+  if (!currentBiz) return;
+  // Tidak menghapus data lama (tetap aman & akan hilang sendiri setelah masa retensi) —
+  // cukup mulai sesi preview baru supaya histori lama tidak dibaca lagi.
+  localStorage.setItem('jaawab_preview_session', 'preview_' + Date.now());
+  convHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  appendMsg('ai', 'Halo! Saya '+currentBiz.agentName+', asisten AI untuk '+currentBiz.name+'. Ada yang bisa saya bantu? 😊');
 }
 
 function formatNotifKasir(rawText) {
