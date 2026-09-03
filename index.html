@@ -24,6 +24,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .dot{width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0}
 .add-btn{margin:8px;padding:9px;border:1px dashed var(--border);border-radius:8px;background:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s}
 .add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.topbar-actions{display:flex;gap:2px;margin-left:8px}
+.icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--font)}
+.icon-btn:hover{background:var(--surface2);border-color:var(--border);color:var(--text)}
+.icon-btn.danger:hover{color:#ff5c5c;border-color:#ff5c5c}
 .main{display:grid;grid-template-rows:auto 1fr;overflow:hidden;min-width:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
 .topbar-left{display:flex;align-items:center;gap:10px}
@@ -140,6 +144,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="topbar-left">
         <div class="topbar-icon" id="topIcon"></div>
         <div><div class="topbar-name" id="topName"></div><div class="topbar-desc" id="topDesc"></div></div>
+        <div class="topbar-actions">
+          <button class="icon-btn" title="Ganti nama bisnis" onclick="renameBiz()">&#9998;</button>
+          <button class="icon-btn danger" title="Hapus bisnis" onclick="deleteBiz()">&#128465;</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="toggleCfg()">&#9881; Konfigurasi</button>
@@ -187,7 +195,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
           <div id="kbStructured"></div>
           <div id="kbRaw" style="display:none">
-            <textarea class="kb-area" id="cfgKnowledge" style="min-height:180px" placeholder="Paste semua info bisnis di sini..."></textarea>
+            <textarea class="kb-area" id="cfgKnowledge" style="min-height:180px" placeholder="Paste semua info bisnis di sini, atau upload PDF/gambar/dokumen di bawah..." oninput="autoResizeKb(this)"></textarea>
+            <div class="kb-file-row">
+              <label class="kb-file-btn">&#128196; Upload PDF/Gambar
+                <input type="file" accept=".pdf,image/*" style="display:none" onchange="handleRawFile(this)">
+              </label>
+              <button class="kb-file-btn" onclick="structureWithAI(event)">&#129302; Strukturkan dengan AI</button>
+              <button class="kb-file-btn" onclick="saveRawPlain()">&#128190; Simpan (tanpa AI)</button>
+            </div>
+            <div class="kb-file-hint" style="margin-top:6px">
+              "Simpan (tanpa AI)" hanya mencocokkan baris <code>=== NAMA KATEGORI ===</code> ke kategori yang sudah ada.
+              "Strukturkan dengan AI" akan membaca ulang seluruh teks/file dan mengatur ulang jadi kategori-kategori rapi otomatis.
+            </div>
           </div>
         </div>
         <div>
@@ -434,7 +453,11 @@ function renderKbManager(bizId) {
     <div class="kb-cat" id="kbc_${ci}">
       <div class="kb-cat-head" onclick="toggleCat(${ci})">
         <div class="kb-cat-title"><span>${cat.icon}</span><span>${cat.label}</span></div>
-        <span class="kb-cat-arrow">&#9658;</span>
+        <div style="display:flex;align-items:center;gap:2px">
+          <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameKbCat(${ci},event)">&#9998;</button>
+          <button class="icon-btn danger" style="width:20px;height:20px;font-size:11px" title="Hapus kategori" onclick="deleteKbCat(${ci},event)">&#128465;</button>
+          <span class="kb-cat-arrow">&#9658;</span>
+        </div>
       </div>
       <div class="kb-cat-body">
         <textarea class="kb-area" rows="4"
@@ -460,6 +483,7 @@ function updateKbCat(ci, val) {
   kbData[currentBiz.id][ci].text = val;
   saveKb(currentBiz.id);
   syncKb();
+  refreshRawTabIfVisible();
 }
 
 function addKbCat() {
@@ -470,6 +494,200 @@ function addKbCat() {
   kbData[currentBiz.id].push({id:'cat_'+Date.now(), icon:icons[kbData[currentBiz.id].length%5], label, text:''});
   saveKb(currentBiz.id);
   renderKbManager(currentBiz.id);
+}
+
+function renameKbCat(ci, event) {
+  if (event) event.stopPropagation();
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const cat = kbData[currentBiz.id][ci];
+  if (!cat) return;
+  const newLabel = prompt('Nama baru untuk kategori ini:', cat.label);
+  if (newLabel === null) return;
+  const trimmed = newLabel.trim();
+  if (!trimmed) { alert('Nama kategori tidak boleh kosong'); return; }
+  cat.label = trimmed;
+  saveKb(currentBiz.id);
+  syncKb();
+  renderKbManager(currentBiz.id);
+  refreshRawTabIfVisible();
+}
+
+function deleteKbCat(ci, event) {
+  if (event) event.stopPropagation();
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const cat = kbData[currentBiz.id][ci];
+  if (!cat) return;
+  const ok = confirm('Hapus kategori "' + cat.label + '"?\n\nIsi teksnya juga akan hilang dari knowledge base (termasuk tab Teks Bebas).');
+  if (!ok) return;
+  kbData[currentBiz.id].splice(ci, 1);
+  saveKb(currentBiz.id);
+  syncKb();
+  renderKbManager(currentBiz.id);
+  refreshRawTabIfVisible();
+}
+
+function refreshRawTabIfVisible() {
+  const rawEl = document.getElementById('kbRaw');
+  if (rawEl && rawEl.style.display !== 'none' && currentBiz) {
+    document.getElementById('cfgKnowledge').value = currentBiz.knowledge;
+  }
+}
+
+async function extractFileText(file, instruction) {
+  const b64 = await new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Gagal baca file'));
+    r.readAsDataURL(file);
+  });
+  const gk = localStorage.getItem('jaawab_gemini_key');
+  const ck = localStorage.getItem('jaawab_api_key');
+  const prov = localStorage.getItem('jaawab_provider') || 'gemini';
+  const prompt = instruction || 'Ekstrak semua informasi penting dari file ini. Tulis format teks biasa ringkas. Bahasa Indonesia.';
+  if (prov === 'gemini' && gk) {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{inline_data:{mime_type:file.type,data:b64}},{text:prompt}]}]})
+    });
+    const d = await res.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else if (prov === 'claude' && ck) {
+    const pt = file.type === 'application/pdf' ? 'document' : 'image';
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':ck,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:[{type:pt,source:{type:'base64',media_type:file.type,data:b64}},{type:'text',text:prompt}]}]})
+    });
+    const d = await res.json();
+    return d.content?.[0]?.text || '';
+  }
+  return '';
+}
+
+async function askAI(promptText, maxTokens) {
+  const gk = localStorage.getItem('jaawab_gemini_key');
+  const ck = localStorage.getItem('jaawab_api_key');
+  const prov = localStorage.getItem('jaawab_provider') || 'gemini';
+  if (prov === 'gemini' && gk) {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{text:promptText}]}]})
+    });
+    const d = await res.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else if (prov === 'claude' && ck) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':ck,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||3000,messages:[{role:'user',content:promptText}]})
+    });
+    const d = await res.json();
+    return d.content?.[0]?.text || '';
+  }
+  return '';
+}
+
+async function handleRawFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const area = document.getElementById('cfgKnowledge');
+  const orig = area.placeholder;
+  area.placeholder = 'Membaca file dengan AI...';
+  try {
+    const extracted = await extractFileText(file);
+    if (extracted) {
+      area.value = (area.value.trim() ? area.value.trim() + '\n\n' : '') + extracted.trim();
+      autoResizeKb(area);
+    } else {
+      alert('Tidak bisa ekstrak file. Coba paste manual.');
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+  area.placeholder = orig;
+  input.value = '';
+}
+
+function parseRawHeaders(text) {
+  // Cocokkan blok "=== NAMA KATEGORI ===\nisi..." sampai header berikutnya atau akhir teks
+  const re = /===\s*(.+?)\s*===\s*\n([\s\S]*?)(?=\n===\s*.+?\s*===|$)/g;
+  const blocks = [];
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    blocks.push({ label: m[1].trim(), text: m[2].trim() });
+  }
+  return blocks;
+}
+
+function saveRawPlain() {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const raw = document.getElementById('cfgKnowledge').value;
+  const blocks = parseRawHeaders(raw);
+  if (blocks.length === 0) {
+    alert('Tidak ditemukan format "=== NAMA KATEGORI ===" di teks. Gunakan tombol "Strukturkan dengan AI" untuk teks bebas tanpa format ini.');
+    return;
+  }
+  const cats = kbData[currentBiz.id];
+  const icons = ['📌','💡','ℹ','📋','🔖'];
+  blocks.forEach(function(blk) {
+    const existing = cats.find(function(c) { return c.label.toUpperCase() === blk.label.toUpperCase(); });
+    if (existing) {
+      existing.text = blk.text;
+    } else {
+      cats.push({ id: 'cat_' + Date.now() + Math.random().toString(36).slice(2,6), icon: icons[cats.length % 5], label: blk.label, text: blk.text });
+    }
+  });
+  saveKb(currentBiz.id);
+  syncKb();
+  renderKbManager(currentBiz.id);
+  document.getElementById('cfgKnowledge').value = currentBiz.knowledge;
+  appendMsg('ai', 'Teks bebas disimpan dan dicocokkan ke kategori terstruktur. ✅');
+}
+
+async function structureWithAI(event) {
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const raw = document.getElementById('cfgKnowledge').value.trim();
+  if (!raw) { alert('Teks masih kosong.'); return; }
+  const gk = localStorage.getItem('jaawab_gemini_key');
+  const ck = localStorage.getItem('jaawab_api_key');
+  if (!gk && !ck) { alert('Isi API key dulu (Gemini/Claude) lewat pengaturan.'); return; }
+
+  const existingLabels = kbData[currentBiz.id].map(function(c){ return c.label; });
+  const btn = event?.target;
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Memproses...'; btn.disabled = true; }
+  try {
+    const prompt = 'Kamu membantu mengorganisir knowledge base bisnis "' + currentBiz.name + '" (' + currentBiz.type + ').\n'
+      + 'Kategori yang SUDAH ADA saat ini: ' + (existingLabels.length ? existingLabels.join(', ') : '(belum ada)') + '.\n\n'
+      + 'Berikut teks bebas / hasil ekstraksi dokumen dari owner:\n---\n' + raw + '\n---\n\n'
+      + 'Tugas: pecah dan atur isi teks di atas menjadi beberapa kategori knowledge base yang rapi. '
+      + 'Kalau ada info yang cocok masuk ke kategori yang SUDAH ADA (nama boleh mirip/sinonim), pakai nama kategori yang sudah ada itu persis. '
+      + 'Kalau tidak ada yang cocok, buat nama kategori baru yang singkat dan jelas (Bahasa Indonesia).\n\n'
+      + 'JAWAB HANYA dengan JSON array valid, tanpa teks lain, tanpa markdown code fence, format:\n'
+      + '[{"label":"Nama Kategori","text":"isi lengkap kategori ini"}, ...]';
+    const result = await askAI(prompt, 4000);
+    const clean = result.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Hasil AI kosong/tidak valid');
+
+    const cats = kbData[currentBiz.id];
+    const icons = ['📌','💡','ℹ','📋','🔖'];
+    parsed.forEach(function(item) {
+      if (!item.label || !item.text) return;
+      const existing = cats.find(function(c) { return c.label.toUpperCase() === item.label.toUpperCase(); });
+      if (existing) {
+        existing.text = item.text;
+      } else {
+        cats.push({ id: 'cat_' + Date.now() + Math.random().toString(36).slice(2,6), icon: icons[cats.length % 5], label: item.label, text: item.text });
+      }
+    });
+    saveKb(currentBiz.id);
+    syncKb();
+    renderKbManager(currentBiz.id);
+    document.getElementById('cfgKnowledge').value = currentBiz.knowledge;
+    appendMsg('ai', 'Berhasil! Teks bebas sudah diatur AI jadi ' + parsed.length + ' kategori terstruktur. Cek tab Terstruktur untuk review. ✅');
+  } catch(e) {
+    alert('Gagal menstrukturkan: ' + e.message + '\n\nCoba lagi atau rapikan teks manual dulu.');
+  } finally {
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
+  }
 }
 
 async function handleKbFile(ci, input) {
@@ -554,6 +772,7 @@ function saveEditor() {
   kbData[currentBiz.id][_editorCatIdx].text = val;
   saveKb(currentBiz.id);
   syncKb();
+  refreshRawTabIfVisible();
   // Update textarea di panel juga
   const area = document.querySelector('#kbc_' + _editorCatIdx + ' .kb-area');
   if (area) { area.value = val; autoResizeKb(area); }
@@ -848,6 +1067,45 @@ function addBusiness() {
   const id = 'biz_' + Date.now();
   BUSINESSES.push({id, name, type:'Bisnis baru', icon:'&#127970;', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}});
   saveBiz(); renderBizList(); selectBiz(id);
+}
+
+function renameBiz() {
+  if (!currentBiz) return;
+  const newName = prompt('Nama baru untuk bisnis ini:', currentBiz.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) { alert('Nama tidak boleh kosong'); return; }
+  currentBiz.name = trimmed;
+  saveBiz();
+  saveBusinessToDB(currentBiz).then(function() { console.log('Rename tersimpan ke Supabase:', currentBiz.id); });
+  document.getElementById('topName').textContent = currentBiz.name;
+  renderBizList();
+}
+
+function deleteBiz() {
+  if (!currentBiz) return;
+  const ok = confirm('Yakin hapus bisnis "' + currentBiz.name + '"?\n\nKnowledge base dan seluruh konfigurasi bisnis ini akan ikut terhapus permanen (termasuk dari Supabase) dan tidak bisa dikembalikan.');
+  if (!ok) return;
+  const id = currentBiz.id;
+  Promise.all([
+    sbFetch("businesses?id=eq." + id, { method: "DELETE", prefer: "return=minimal" }),
+    sbFetch("kb_categories?business_id=eq." + id, { method: "DELETE", prefer: "return=minimal" })
+  ]).then(function() { console.log('Bisnis dihapus dari Supabase:', id); });
+
+  const idx = BUSINESSES.findIndex(function(b) { return b.id === id; });
+  if (idx > -1) BUSINESSES.splice(idx, 1);
+  delete kbData[id];
+  saveBiz();
+  if (localStorage.getItem('jaawab_last_biz') === id) localStorage.removeItem('jaawab_last_biz');
+
+  currentBiz = null;
+  cfgOpen = false;
+  renderBizList();
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('chatWrap').style.display = 'none';
+  document.getElementById('cfgPanel').style.display = 'none';
+  document.getElementById('ws').className = 'workspace';
 }
 
 function showApiModal() { document.getElementById('apiModal').style.display = 'flex'; switchProvider(activeProvider); }
