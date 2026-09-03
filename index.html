@@ -451,14 +451,15 @@ function renderKbManager(bizId) {
   const cats = kbData[bizId] || [];
   el.innerHTML = cats.map((cat,ci) => `
     <div class="kb-cat" id="kbc_${ci}">
-      <div class="kb-cat-head" onclick="toggleCat(${ci})">
-        <div class="kb-cat-title"><span>${cat.icon}</span><span>${cat.label}</span></div>
-        <div style="display:flex;align-items:center;gap:2px">
-          <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameKbCat(${ci},event)">&#9998;</button>
-          <button class="icon-btn danger" style="width:20px;height:20px;font-size:11px" title="Hapus kategori" onclick="deleteKbCat(${ci},event)">&#128465;</button>
-          <span class="kb-cat-arrow">&#9658;</span>
+        <div class="kb-cat-head" onclick="toggleCat(${ci})">
+          <div class="kb-cat-title"><span>${cat.icon}</span><span>${cat.label}</span></div>
+          <div style="display:flex;align-items:center;gap:2px">
+            <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameKbCat(${ci},event)">&#9998;</button>
+            <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Gabung ke kategori lain" onclick="mergeKbCat(${ci},event)">&#128279;</button>
+            <button class="icon-btn danger" style="width:20px;height:20px;font-size:11px" title="Hapus kategori" onclick="deleteKbCat(${ci},event)">&#128465;</button>
+            <span class="kb-cat-arrow">&#9658;</span>
+          </div>
         </div>
-      </div>
       <div class="kb-cat-body">
         <textarea class="kb-area" rows="4"
           placeholder="Paste info dari Word/Excel di sini, atau upload file di bawah..."
@@ -510,6 +511,30 @@ function renameKbCat(ci, event) {
   syncKb();
   renderKbManager(currentBiz.id);
   refreshRawTabIfVisible();
+}
+
+function mergeKbCat(ci, event) {
+  if (event) event.stopPropagation();
+  if (!currentBiz || !kbData[currentBiz.id]) return;
+  const cats = kbData[currentBiz.id];
+  const src = cats[ci];
+  if (!src) return;
+  const others = cats.map(function(c, i) { return { c: c, i: i }; }).filter(function(o) { return o.i !== ci; });
+  if (others.length === 0) { alert('Tidak ada kategori lain untuk digabung.'); return; }
+  const list = others.map(function(o, n) { return (n + 1) + '. ' + o.c.label; }).join('\n');
+  const pick = prompt('Gabungkan "' + src.label + '" ke kategori mana?\nKetik nomornya:\n\n' + list);
+  if (pick === null) return;
+  const n = parseInt(pick.trim(), 10);
+  if (!n || n < 1 || n > others.length) { alert('Nomor tidak valid.'); return; }
+  const target = others[n - 1].c;
+  target.text = (target.text ? target.text.trim() + '\n\n' : '') + (src.text || '').trim();
+  const idx = cats.findIndex(function(c) { return c === src; });
+  if (idx > -1) cats.splice(idx, 1);
+  saveKb(currentBiz.id);
+  syncKb();
+  renderKbManager(currentBiz.id);
+  refreshRawTabIfVisible();
+  appendMsg('ai', 'Kategori "' + src.label + '" digabung ke "' + target.label + '". ✅');
 }
 
 function deleteKbCat(ci, event) {
@@ -605,6 +630,29 @@ async function handleRawFile(input) {
   input.value = '';
 }
 
+function normalizeLabel(l) {
+  return (l || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/s$/, ''); // toleransi tunggal/jamak (kategori vs kategoris)
+}
+
+function findMatchingCat(cats, label) {
+  const target = normalizeLabel(label);
+  // 1) exact match dulu (case-insensitive)
+  let found = cats.find(function(c) { return c.label.toUpperCase() === label.toUpperCase(); });
+  if (found) return found;
+  // 2) match setelah dinormalisasi (toleran typo kecil/jamak)
+  found = cats.find(function(c) { return normalizeLabel(c.label) === target; });
+  if (found) return found;
+  // 3) salah satu adalah substring dari yang lain (toleran variasi kata)
+  found = cats.find(function(c) {
+    const cn = normalizeLabel(c.label);
+    return cn.length > 3 && target.length > 3 && (cn.indexOf(target) !== -1 || target.indexOf(cn) !== -1);
+  });
+  return found || null;
+}
+
 function parseRawHeaders(text) {
   // Cocokkan blok "=== NAMA KATEGORI ===\nisi..." sampai header berikutnya atau akhir teks
   const re = /===\s*(.+?)\s*===\s*\n([\s\S]*?)(?=\n===\s*.+?\s*===|$)/g;
@@ -627,7 +675,7 @@ function saveRawPlain() {
   const cats = kbData[currentBiz.id];
   const icons = ['📌','💡','ℹ','📋','🔖'];
   blocks.forEach(function(blk) {
-    const existing = cats.find(function(c) { return c.label.toUpperCase() === blk.label.toUpperCase(); });
+    const existing = findMatchingCat(cats, blk.label);
     if (existing) {
       existing.text = blk.text;
     } else {
@@ -658,8 +706,8 @@ async function structureWithAI(event) {
       + 'Kategori yang SUDAH ADA saat ini: ' + (existingLabels.length ? existingLabels.join(', ') : '(belum ada)') + '.\n\n'
       + 'Berikut teks bebas / hasil ekstraksi dokumen dari owner:\n---\n' + raw + '\n---\n\n'
       + 'Tugas: pecah dan atur isi teks di atas menjadi beberapa kategori knowledge base yang rapi. '
-      + 'Kalau ada info yang cocok masuk ke kategori yang SUDAH ADA (nama boleh mirip/sinonim), pakai nama kategori yang sudah ada itu persis. '
-      + 'Kalau tidak ada yang cocok, buat nama kategori baru yang singkat dan jelas (Bahasa Indonesia).\n\n'
+      + 'Kalau ada info yang cocok masuk ke kategori yang SUDAH ADA, WAJIB pakai nama kategori itu PERSIS SAMA (salin-tempel apa adanya, jangan diubah ejaan/singular-jamak/kapitalisasinya). '
+      + 'Kalau benar-benar tidak ada yang cocok, baru buat nama kategori baru yang singkat dan jelas (Bahasa Indonesia).\n\n'
       + 'JAWAB HANYA dengan JSON array valid, tanpa teks lain, tanpa markdown code fence, format:\n'
       + '[{"label":"Nama Kategori","text":"isi lengkap kategori ini"}, ...]';
     const result = await askAI(prompt, 4000);
@@ -671,7 +719,7 @@ async function structureWithAI(event) {
     const icons = ['📌','💡','ℹ','📋','🔖'];
     parsed.forEach(function(item) {
       if (!item.label || !item.text) return;
-      const existing = cats.find(function(c) { return c.label.toUpperCase() === item.label.toUpperCase(); });
+      const existing = findMatchingCat(cats, item.label);
       if (existing) {
         existing.text = item.text;
       } else {
