@@ -234,6 +234,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
           <div class="cfg-field"><div class="cfg-label">WA Kasir (juga dipakai untuk nomor ditelepon)</div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau tanggal pelayanan yang dikomplain masih dalam rentang ini, AI akan bilang itu masuk garansi (bisa langsung datang ke tempat). Lewat dari ini, AI akan bilang perlu diteruskan ke manajemen dulu.</div>
           <div style="display:flex;gap:8px">
             <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam mulai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallStart" value="11:00"></div>
             <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam selesai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
@@ -423,6 +425,7 @@ function loadCfgForm() {
   document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
+  document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
   ensureNotifCategories(currentBiz);
@@ -449,6 +452,8 @@ function saveConfig() {
   currentBiz.responseDelay = document.getElementById('cfgDelay').value;
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
+  currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
+  if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
   currentBiz.kasir_call_end = document.getElementById('cfgKasirCallEnd').value || '22:00';
   // notif_categories sudah ter-update langsung di currentBiz lewat interaksi kartu (lihat renderNotifCategories)
@@ -996,14 +1001,14 @@ async function sendMsg() {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {'Content-Type':'application/json','x-api-key':ck,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:prompt,messages:historyForApi})
+        body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,system:prompt,messages:historyForApi})
       });
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       reply = d.content?.[0]?.text || 'Maaf, ada gangguan.';
     } else {
       const msgs2 = historyForApi.map(m => ({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-      const res = await callGeminiAPI(gk, {system_instruction:{parts:[{text:prompt}]}, contents:msgs2, generationConfig:{maxOutputTokens:1000}});
+      const res = await callGeminiAPI(gk, {system_instruction:{parts:[{text:prompt}]}, contents:msgs2, generationConfig:{maxOutputTokens:2000}});
       const d = await res.json();
       if (d.error) throw new Error('Gemini '+d.error.code+': '+d.error.message);
       reply = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, ada gangguan.';
@@ -1079,9 +1084,11 @@ function buildPrompt() {
   const now = new Date();
   const wit = new Date(now.getTime() + 9*60*60*1000);
   const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const bulanNama = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const hari = days[wit.getUTCDay()];
   const jamNum = wit.getUTCHours() + wit.getUTCMinutes()/60;
   const jam = wit.getUTCHours().toString().padStart(2,'0') + '.' + wit.getUTCMinutes().toString().padStart(2,'0');
+  const tanggalHariIni = wit.getUTCDate() + ' ' + bulanNama[wit.getUTCMonth()] + ' ' + wit.getUTCFullYear();
   const gm = {
     convert: 'Dorong pelanggan untuk booking/pembelian secara hangat dan persuasif.',
     support: 'Bantu pelanggan selesaikan masalah dengan ramah.',
@@ -1097,17 +1104,22 @@ function buildPrompt() {
     const startNum = sh + sm/60, endNum = eh + em/60;
     const isOpen = jamNum >= startNum && jamNum < endNum;
     const jamRangeText = (currentBiz.kasir_call_start||'11:00') + '-' + (currentBiz.kasir_call_end||'22:00') + ' WIT';
+    const garansiHari = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
     kasirCallRule = '\n\nATURAN KOMPLAIN / MAU BICARA LANGSUNG DENGAN STAF:\n'
-      + '- Kalau pelanggan komplain serius (hasil kerja, pelayanan, dll), kumpulkan data ini secara natural lewat percakapan (boleh bertahap, jangan interogatif):\n'
-      + '  1) Nama pelanggan  2) Nomor HP/WA pelanggan  3) Tanggal pelayanan terkait  4) Barberman yang mengerjakan  5) Kronologi/duduk perkara komplain (apa yang terjadi)\n'
-      + '- Begitu data di atas terkumpul (boleh sebagian kalau pelanggan tidak tahu/tidak mau kasih sebagian), tulis balasan ke pelanggan dengan urutan PERSIS seperti ini (WAJIB, jangan disingkat/dikosongkan):\n'
+      + '- HARI INI: ' + tanggalHariIni + ' (' + hari + ')\n'
+      + '- LANGKAH 1 (WAJIB, jangan lompat ke pengumpulan data dulu): Kalau pelanggan mulai komplain, JANGAN langsung minta data lengkap. Balas dulu dengan basa-basi ramah/empati (bikin pelanggan tenang), lalu tanyakan dengan natural: (a) apa yang dikeluhkan, dan (b) kapan tanggal pelayanannya. Boleh ditanya dalam satu pesan santai, tidak perlu format kaku.\n'
+      + '- LANGKAH 2: Begitu tanggal pelayanan diketahui, hitung selisih hari dari tanggal itu ke HARI INI.\n'
+      + '  > Kalau selisihnya MASIH DALAM ' + garansiHari + ' hari (masuk garansi): sampaikan dengan hangat bahwa ini termasuk garansi Storee, pelanggan BISA LANGSUNG DATANG ke Storee Barbershop untuk diperbaiki tanpa perlu proses rumit. Tetap kumpulkan data ringkas (Nama, No. HP, Barberman yang mengerjakan, keluhan singkat) secara natural — ini untuk dibuatkan catatan supaya kasir tahu akan ada pelanggan datang untuk garansi.\n'
+      + '  > Kalau selisihnya SUDAH LEWAT ' + garansiHari + ' hari (di luar garansi): sampaikan dengan empati bahwa ini akan diteruskan ke manajemen untuk ditindaklanjuti. Kumpulkan data lebih lengkap: Nama, No. HP, Tanggal pelayanan, Barberman yang mengerjakan, Kronologi/duduk perkara keluhan.\n'
+      + '- LANGKAH 3 (WAJIB di KEDUA kasus di atas, tanpa kecuali): begitu data yang relevan sudah terkumpul (boleh sebagian kalau pelanggan tidak tahu/tidak mau kasih), tulis balasan ke pelanggan dengan urutan PERSIS seperti ini:\n'
       + '  (a) Kalimat empati singkat\n'
-      + '  (b) Resume/ringkasan komplain dalam poin-poin BERISI (tulis ulang datanya, JANGAN kosong/tanda "-" doang), contoh:\n'
+      + '  (b) Info status (masuk garansi -> boleh langsung datang / di luar garansi -> akan diteruskan manajemen)\n'
+      + '  (c) Resume/ringkasan komplain dalam poin-poin BERISI (tulis ulang datanya, JANGAN kosong/tanda "-" doang), contoh:\n'
       + '      "Baik kak, ini saya catat ya:\\n- Tanggal: [isi]\\n- Barberman: [isi]\\n- Keluhan: [isi ringkas kronologinya]"\n'
-      + '  (c) Kalimat penutup: staf akan meninjau dan menelepon balik\n'
-      + '  (d) BARU setelah itu, di baris baru, tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur (Nama, HP, Tanggal Pelayanan, Barberman, Kronologi) — ini bagian TERSEMBUNYI, tidak akan dilihat pelanggan, jadi boleh lebih detail dari poin (b).\n'
-      + '  PENTING: bagian (a)-(c) WAJIB berisi kalimat lengkap dan resume yang benar-benar ada isinya, BUKAN placeholder kosong — karena hanya bagian SEBELUM tag [NOTIF_KOMPLAIN] yang akan ditampilkan ke pelanggan.\n'
-      + '- Kalau pelanggan mau lebih cepat / tidak mau nunggu ditelepon staf:\n'
+      + '  (d) Kalimat penutup yang sesuai (staf akan menyiapkan kedatangannya / staf akan meninjau dan menelepon balik)\n'
+      + '  (e) BARU setelah itu, di baris baru, tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur: Nama, HP, Tanggal Pelayanan, Barberman, Kronologi, dan Status Garansi (isi persis "Dalam Garansi" atau "Di Luar Garansi") — ini bagian TERSEMBUNYI, tidak akan dilihat pelanggan, jadi boleh lebih detail dari poin (c).\n'
+      + '  PENTING: bagian (a)-(d) WAJIB berisi kalimat lengkap yang benar-benar ada isinya, BUKAN placeholder kosong — karena hanya bagian SEBELUM tag [NOTIF_KOMPLAIN] yang akan ditampilkan ke pelanggan.\n'
+      + '- Kalau pelanggan mau lebih cepat / tidak mau nunggu ditelepon staf (di kedua kasus garansi maupun tidak):\n'
       + (isOpen
           ? '  Sekarang MASUK jam kerja kasir (' + jamRangeText + '). Berikan nomor ' + callNumber + ' untuk ditelepon/WA langsung, dengan nada empati. Kalau komplainnya berkaitan dengan hasil kerja/kondisi tertentu yang sebaiknya dilihat (misal hasil potongan, kerusakan, dll), sebutkan pelanggan bisa langsung kirim foto atau video ke nomor itu juga supaya staf bisa langsung lihat kondisinya.'
           : '  Sekarang DI LUAR jam kerja kasir (' + jamRangeText + '). JANGAN berikan nomor telepon sekarang. Sampaikan dengan empati bahwa staf bisa dihubungi di jam ' + jamRangeText + ' (bisa telepon/WA langsung, termasuk kirim foto/video kalau ada).')
@@ -1155,6 +1167,7 @@ async function loadBusinessesFromDB() {
       biz.responseDelay = row.response_delay || biz.responseDelay;
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
       biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
       biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
       biz.notif_categories = row.notif_categories || biz.notif_categories;
@@ -1179,6 +1192,7 @@ async function saveBusinessToDB(biz) {
       response_delay: biz.responseDelay,
       fonnte_token: biz.fonnte_token,
       kasir_number: biz.kasir_number,
+      garansi_hari: biz.garansi_hari,
       kasir_call_start: biz.kasir_call_start,
       kasir_call_end: biz.kasir_call_end,
       notif_categories: biz.notif_categories,
@@ -1406,8 +1420,10 @@ function formatNotifKomplain(rawText, biz, cat) {
   var tanggal = exVal(rawText, ['Tanggal Pelayanan', 'Tanggal']);
   var barber = exVal(rawText, ['Barberman', 'Barber']);
   var kronologi = exVal(rawText, ['Kronologi', 'Duduk Perkara', 'Kejadian']);
+  var statusGaransi = exVal(rawText, ['Status Garansi']);
   var header = (cat && cat.header) ? cat.header.trim() + '\n\n' : '';
   var footer = (cat && cat.footer) ? '\n\n📌 Catatan:\n' + cat.footer.trim() : '';
+  var garansiLine = (statusGaransi !== '-') ? '\n- Status Garansi: ' + statusGaransi : '';
 
   return header + '⚠️ ADA KOMPLAIN MASUK — ' + (biz?.name || '') + '\n\n'
     + 'Resume Komplain:\n'
@@ -1416,6 +1432,7 @@ function formatNotifKomplain(rawText, biz, cat) {
     + '- Tanggal Pelayanan: ' + tanggal + '\n'
     + '- Barberman: ' + barber + '\n'
     + '- Kronologi: ' + kronologi
+    + garansiLine
     + footer;
 }
 
