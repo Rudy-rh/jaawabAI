@@ -28,6 +28,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--font)}
 .icon-btn:hover{background:var(--surface2);border-color:var(--border);color:var(--text)}
 .icon-btn.danger:hover{color:#ff5c5c;border-color:#ff5c5c}
+.notif-cat-card{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--surface2)}
+.notif-cat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.notif-cat-title{font-size:12px;font-weight:600}
+.notif-field-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.notif-field-label{font-size:10px;color:var(--muted);width:46px;flex-shrink:0}
+.notif-field-preview{flex:1;font-size:11px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.notif-field-preview:hover{border-color:var(--accent)}
+.notif-field-preview.empty{color:var(--muted);font-style:italic}
 .main{display:grid;grid-template-rows:auto 1fr;overflow:hidden;min-width:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
 .topbar-left{display:flex;align-items:center;gap:10px}
@@ -230,9 +238,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam mulai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallStart" value="11:00"></div>
             <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam selesai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
           </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor di atas dipakai AI untuk 2 hal: (1) notifikasi WA booking ke kasir, (2) diberikan ke pelanggan yang komplain/mau bicara langsung — tapi HANYA kalau waktu sekarang (WIT) ada di rentang jam ini. Di luar jam ini, AI akan minta pelanggan telepon nanti.</div>
-          <div class="cfg-field"><div class="cfg-label">Catatan Kaki Notifikasi Komplain (dikirim ke kasir)</div><textarea class="cfg-input" id="cfgKomplainNote" style="min-height:100px" placeholder="Catatan/instruksi tambahan untuk kasir saat ada komplain masuk..."></textarea></div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Teks ini otomatis ditempel di bawah resume tiap komplain yang dikirim ke WA kasir. Murni instruksi untuk kasir — tidak ikut dibaca AI saat menjawab pelanggan.</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor di atas dipakai AI untuk 2 hal: (1) diberikan ke pelanggan yang komplain/mau bicara langsung, (2) target default untuk kategori Pesan Khusus di bawah — tapi HANYA kalau waktu sekarang (WIT) ada di rentang jam ini. Di luar jam ini, AI akan minta pelanggan telepon nanti.</div>
+          <div class="cfg-sec-title" style="margin-top:8px">Pesan Khusus (Header/Footer)</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Tiap kategori notifikasi (Booking, Komplain, dst) punya HP tujuan + header/footer sendiri yang otomatis ditempel ke pesan WA. Klik ikon layar untuk edit teks panjang dengan nyaman.</div>
+          <div id="notifCatList"></div>
+          <button class="add-btn" style="width:100%" onclick="addNotifCategory()">+ Tambah kategori</button>
           <div class="cfg-sec-title" style="margin-top:8px">Notif Barberman</div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber &rarr; kasir + barber ybs (tanpa No. HP pelanggan)</div>
           <div class="cfg-field"><div class="cfg-label">Ahmad</div><input class="cfg-input" id="cfgBarberAhmad"></div>
@@ -293,6 +303,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="editor-foot">
       <button class="editor-cancel" onclick="closeEditor()">Batal</button>
       <button class="editor-save" onclick="saveEditor()">&#x2713; Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- Notif Header/Footer Editor Modal -->
+<div class="editor-modal" id="notifEditorModal">
+  <div class="editor-box">
+    <div class="editor-head">
+      <div class="editor-title">
+        <span id="notifEditorLabel"></span>
+      </div>
+      <button class="editor-close" onclick="closeNotifEditor()">&#x2715;</button>
+    </div>
+    <textarea class="editor-textarea" id="notifEditorTextarea" placeholder="Kosongkan kalau tidak perlu header/footer..."></textarea>
+    <div class="editor-foot">
+      <button class="editor-cancel" onclick="closeNotifEditor()">Batal</button>
+      <button class="editor-save" onclick="saveNotifEditor()">&#x2713; Simpan</button>
     </div>
   </div>
 </div>
@@ -399,7 +425,8 @@ function loadCfgForm() {
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
-  document.getElementById('cfgKomplainNote').value = currentBiz.komplain_note || DEFAULT_KOMPLAIN_NOTE;
+  ensureNotifCategories(currentBiz);
+  renderNotifCategories();
   const bc = currentBiz.barberman_contacts || {};
   document.getElementById('cfgBarberAhmad').value = bc.Ahmad || '';
   document.getElementById('cfgBarberFajar').value = bc.Fajar || '';
@@ -424,7 +451,7 @@ function saveConfig() {
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
   currentBiz.kasir_call_end = document.getElementById('cfgKasirCallEnd').value || '22:00';
-  currentBiz.komplain_note = document.getElementById('cfgKomplainNote').value || DEFAULT_KOMPLAIN_NOTE;
+  // notif_categories sudah ter-update langsung di currentBiz lewat interaksi kartu (lihat renderNotifCategories)
   currentBiz.barberman_contacts = {Ahmad:document.getElementById('cfgBarberAhmad').value,Fajar:document.getElementById('cfgBarberFajar').value,Onny:document.getElementById('cfgBarberOnny').value,Wemmy:document.getElementById('cfgBarberWemmy').value};
   syncKb();
   saveBiz();
@@ -996,10 +1023,14 @@ async function sendMsg() {
         document.getElementById('statLead').textContent = currentBiz.stats.leads;
       }
     }
-    if (reply.includes('[NOTIF_KASIR]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
+    if (reply.includes('[NOTIF_KASIR]') && currentBiz.fonnte_token) {
       const rawNotif = reply.split('[NOTIF_KASIR]')[1]?.trim() || '';
-      const notifKasir = formatNotifKasir(rawNotif);
-      kirimNotifBooking(notifKasir, currentBiz.fonnte_token, currentBiz.kasir_number, currentBiz.barberman_contacts);
+      const bookingCat = getNotifCat(currentBiz, 'booking');
+      const target = bookingCat.target || currentBiz.kasir_number;
+      if (target) {
+        const notifKasir = formatNotifKasir(rawNotif, bookingCat);
+        kirimNotifBooking(notifKasir, currentBiz.fonnte_token, target, currentBiz.barberman_contacts);
+      }
     }
     if (reply.includes('[NOTIF_KASIR]')) {
       const replyBersih = reply.split('[NOTIF_KASIR]')[0].trimEnd();
@@ -1012,10 +1043,14 @@ async function sendMsg() {
       if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih + penutup;
       savedReply = replyBersih + penutup;
     }
-    if (reply.includes('[NOTIF_KOMPLAIN]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
+    if (reply.includes('[NOTIF_KOMPLAIN]') && currentBiz.fonnte_token) {
       const rawKomplain = reply.split('[NOTIF_KOMPLAIN]')[1]?.trim() || '';
-      const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz);
-      kirimKasir(notifKomplain, currentBiz.kasir_number, currentBiz.fonnte_token);
+      const komplainCat = getNotifCat(currentBiz, 'komplain');
+      const target = komplainCat.target || currentBiz.kasir_number;
+      if (target) {
+        const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz, komplainCat);
+        kirimKasir(notifKomplain, target, currentBiz.fonnte_token);
+      }
     }
     if (reply.includes('[NOTIF_KOMPLAIN]')) {
       let replyBersih = reply.split('[NOTIF_KOMPLAIN]')[0].trimEnd();
@@ -1122,7 +1157,7 @@ async function loadBusinessesFromDB() {
       biz.kasir_number = row.kasir_number || biz.kasir_number;
       biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
       biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
-      biz.komplain_note = row.komplain_note || biz.komplain_note;
+      biz.notif_categories = row.notif_categories || biz.notif_categories;
       biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
       if (row.knowledge) biz.knowledge = row.knowledge;
       if (row.scenarios) biz.scenarios = row.scenarios;
@@ -1146,7 +1181,7 @@ async function saveBusinessToDB(biz) {
       kasir_number: biz.kasir_number,
       kasir_call_start: biz.kasir_call_start,
       kasir_call_end: biz.kasir_call_end,
-      komplain_note: biz.komplain_note,
+      notif_categories: biz.notif_categories,
       barberman_contacts: biz.barberman_contacts,
       knowledge: biz.knowledge,
       updated_at: new Date().toISOString()
@@ -1247,7 +1282,117 @@ function resetPreviewConversation() {
 
 const DEFAULT_KOMPLAIN_NOTE = 'Bisa jadi sebentar lagi pelanggan ybs akan menelepon. Kasir baiknya telepon lebih dahulu saja. Sebelum menelepon, kasir cek dulu kebenaran data komplain ini di sistem: apakah tanggal pelayanannya cocok, barberman yang mengerjakan, cek CCTV dsb.\n\nSaat komunikasi dengan pelanggan tsb, HARUS SERAMAH MUNGKIN dan jadilah pendengar yang baik. Minta foto dan videonya untuk kita analisa.';
 
-function formatNotifKomplain(rawText, biz) {
+// ==================== PESAN KHUSUS (kategori notif dengan header/footer) ====================
+function ensureNotifCategories(biz) {
+  if (biz.notif_categories && biz.notif_categories.length) return;
+  // Migrasi dari data lama (kalau ada) supaya tidak kehilangan konfigurasi sebelumnya
+  biz.notif_categories = [
+    {
+      id: 'booking', label: 'Booking Pesanan', target: biz.kasir_number || '',
+      header: 'Alhamdulillah Storeelove masuk booking ya.. 🤗',
+      footer: 'jangan terlupa, call pelanggan ini 15 menit sebelum waktu kedatangan Storeelove. Diminta datang sebelum waktu booking agar tidak menjadi antrian biasa bila datang lebih dari jam bookingnya.\n\nsip 😉'
+    },
+    {
+      id: 'komplain', label: 'Komplain Pelayanan', target: biz.kasir_number || '',
+      header: '',
+      footer: biz.komplain_note || DEFAULT_KOMPLAIN_NOTE
+    }
+  ];
+}
+
+function getNotifCat(biz, id) {
+  ensureNotifCategories(biz);
+  return biz.notif_categories.find(function(c) { return c.id === id; });
+}
+
+function truncatePreview(s) {
+  if (!s) return '';
+  var oneLine = s.replace(/\n/g, ' ↵ ');
+  return oneLine.length > 60 ? oneLine.slice(0, 60) + '…' : oneLine;
+}
+
+function renderNotifCategories() {
+  if (!currentBiz) return;
+  ensureNotifCategories(currentBiz);
+  const box = document.getElementById('notifCatList');
+  box.innerHTML = currentBiz.notif_categories.map(function(cat, i) {
+    const headerPreview = cat.header ? truncatePreview(cat.header) : '(kosong — klik untuk isi)';
+    const footerPreview = cat.footer ? truncatePreview(cat.footer) : '(kosong — klik untuk isi)';
+    return '<div class="notif-cat-card">'
+      + '<div class="notif-cat-head">'
+        + '<div class="notif-cat-title">' + cat.label + '</div>'
+        + '<div style="display:flex;gap:2px">'
+          + '<button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameNotifCategory(' + i + ')">&#9998;</button>'
+          + '<button class="icon-btn danger" style="width:20px;height:20px;font-size:11px" title="Hapus kategori" onclick="deleteNotifCategory(' + i + ')">&#128465;</button>'
+        + '</div>'
+      + '</div>'
+      + '<div class="notif-field-row"><div class="notif-field-label">HP tujuan</div><input class="cfg-input" style="margin:0;flex:1" value="' + (cat.target || '').replace(/"/g,'&quot;') + '" placeholder="0811485774" oninput="updateNotifTarget(' + i + ',this.value)"></div>'
+      + '<div class="notif-field-row"><div class="notif-field-label">Header</div><div class="notif-field-preview' + (cat.header ? '' : ' empty') + '" onclick="openNotifEditor(' + i + ',\'header\')">' + headerPreview + '</div></div>'
+      + '<div class="notif-field-row"><div class="notif-field-label">Footer</div><div class="notif-field-preview' + (cat.footer ? '' : ' empty') + '" onclick="openNotifEditor(' + i + ',\'footer\')">' + footerPreview + '</div></div>'
+    + '</div>';
+  }).join('');
+}
+
+function updateNotifTarget(i, val) {
+  if (!currentBiz) return;
+  currentBiz.notif_categories[i].target = val;
+}
+
+function renameNotifCategory(i) {
+  if (!currentBiz) return;
+  const cat = currentBiz.notif_categories[i];
+  const newLabel = prompt('Nama kategori:', cat.label);
+  if (newLabel === null) return;
+  const trimmed = newLabel.trim();
+  if (!trimmed) { alert('Nama tidak boleh kosong'); return; }
+  cat.label = trimmed;
+  renderNotifCategories();
+}
+
+function deleteNotifCategory(i) {
+  if (!currentBiz) return;
+  const cat = currentBiz.notif_categories[i];
+  if (!confirm('Hapus kategori "' + cat.label + '"? Kalau ini kategori Booking/Komplain, notifikasi otomatis terkait tidak akan terkirim lagi sampai dibuat ulang.')) return;
+  currentBiz.notif_categories.splice(i, 1);
+  renderNotifCategories();
+}
+
+function addNotifCategory() {
+  if (!currentBiz) return;
+  const label = prompt('Nama kategori baru (misal: "Reschedule", "Retur Produk"):');
+  if (!label || !label.trim()) return;
+  ensureNotifCategories(currentBiz);
+  currentBiz.notif_categories.push({
+    id: 'custom_' + Date.now(), label: label.trim(),
+    target: currentBiz.kasir_number || '', header: '', footer: ''
+  });
+  renderNotifCategories();
+}
+
+let _notifEditIdx = -1, _notifEditField = '';
+function openNotifEditor(i, field) {
+  if (!currentBiz) return;
+  _notifEditIdx = i; _notifEditField = field;
+  const cat = currentBiz.notif_categories[i];
+  document.getElementById('notifEditorLabel').textContent = cat.label + ' — ' + (field === 'header' ? 'Header' : 'Footer');
+  document.getElementById('notifEditorTextarea').value = cat[field] || '';
+  document.getElementById('notifEditorModal').classList.add('open');
+}
+
+function closeNotifEditor() {
+  document.getElementById('notifEditorModal').classList.remove('open');
+  _notifEditIdx = -1; _notifEditField = '';
+}
+
+function saveNotifEditor() {
+  if (_notifEditIdx < 0 || !currentBiz) return;
+  currentBiz.notif_categories[_notifEditIdx][_notifEditField] = document.getElementById('notifEditorTextarea').value;
+  closeNotifEditor();
+  renderNotifCategories();
+}
+
+
+function formatNotifKomplain(rawText, biz, cat) {
   function exVal(text, keys) {
     for (var i = 0; i < keys.length; i++) {
       var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
@@ -1261,19 +1406,20 @@ function formatNotifKomplain(rawText, biz) {
   var tanggal = exVal(rawText, ['Tanggal Pelayanan', 'Tanggal']);
   var barber = exVal(rawText, ['Barberman', 'Barber']);
   var kronologi = exVal(rawText, ['Kronologi', 'Duduk Perkara', 'Kejadian']);
-  var catatan = (biz && biz.komplain_note) ? biz.komplain_note : DEFAULT_KOMPLAIN_NOTE;
+  var header = (cat && cat.header) ? cat.header.trim() + '\n\n' : '';
+  var footer = (cat && cat.footer) ? '\n\n📌 Catatan:\n' + cat.footer.trim() : '';
 
-  return '⚠️ ADA KOMPLAIN MASUK — ' + (biz?.name || '') + '\n\n'
+  return header + '⚠️ ADA KOMPLAIN MASUK — ' + (biz?.name || '') + '\n\n'
     + 'Resume Komplain:\n'
     + '- Nama: ' + nama + '\n'
     + '- No. HP/WA: ' + hp + '\n'
     + '- Tanggal Pelayanan: ' + tanggal + '\n'
     + '- Barberman: ' + barber + '\n'
-    + '- Kronologi: ' + kronologi + '\n\n'
-    + '📌 Catatan:\n' + catatan;
+    + '- Kronologi: ' + kronologi
+    + footer;
 }
 
-function formatNotifKasir(rawText) {
+function formatNotifKasir(rawText, cat) {
   function exVal(text, keys) {
     for (var i = 0; i < keys.length; i++) {
       var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
@@ -1289,7 +1435,9 @@ function formatNotifKasir(rawText) {
   var tanggal = exVal(rawText, ['Tanggal', 'Hari/Tgl']);
   var jam = exVal(rawText, ['Jam']);
   var barber = exVal(rawText, ['Barberman', 'Barber']);
-  return 'Alhamdulillah Storeelove masuk booking ya.. 🤗\n\nDetail Booking:\n- Nama: ' + nama + '\n- No. HP: ' + hp + '\n- Jumlah Orang: ' + jumlah + '\n- Layanan: ' + layanan + '\n- Tanggal: ' + tanggal + '\n- Jam: ' + jam + '\n- Barberman: ' + barber + '\n\njangan terlupa, call pelanggan ini 15 menit sebelum waktu kedatangan Storeelove. Diminta datang sebelum waktu booking agar tidak menjadi antrian biasa bila datang lebih dari jam bookingnya.\n\nsip 😉';
+  var header = (cat && cat.header) ? cat.header.trim() : 'Alhamdulillah Storeelove masuk booking ya.. 🤗';
+  var footer = (cat && cat.footer) ? cat.footer.trim() : 'jangan terlupa, call pelanggan ini 15 menit sebelum waktu kedatangan Storeelove. Diminta datang sebelum waktu booking agar tidak menjadi antrian biasa bila datang lebih dari jam bookingnya.\n\nsip 😉';
+  return header + '\n\nDetail Booking:\n- Nama: ' + nama + '\n- No. HP: ' + hp + '\n- Jumlah Orang: ' + jumlah + '\n- Layanan: ' + layanan + '\n- Tanggal: ' + tanggal + '\n- Jam: ' + jam + '\n- Barberman: ' + barber + (footer ? '\n\n' + footer : '');
 }
 
 function kirimNotifBooking(pesanKasir, token, kasirNumber, barbermanContacts) {
