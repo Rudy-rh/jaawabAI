@@ -1008,6 +1008,20 @@ async function sendMsg() {
       if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih + penutup;
       savedReply = replyBersih + penutup;
     }
+    if (reply.includes('[NOTIF_KOMPLAIN]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
+      const rawKomplain = reply.split('[NOTIF_KOMPLAIN]')[1]?.trim() || '';
+      const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz.name);
+      kirimKasir(notifKomplain, currentBiz.kasir_number, currentBiz.fonnte_token);
+    }
+    if (reply.includes('[NOTIF_KOMPLAIN]')) {
+      const replyBersih = reply.split('[NOTIF_KOMPLAIN]')[0].trimEnd();
+      const lastBubble = document.querySelector('#messages .msg.ai:last-child .bubble');
+      if (lastBubble) {
+        lastBubble.innerHTML = replyBersih.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      }
+      if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih;
+      savedReply = replyBersih;
+    }
     saveConversationMessage(currentBiz.id, getCustomerId(), 'assistant', savedReply);
   } catch(e) {
     removeTyping();
@@ -1040,11 +1054,16 @@ function buildPrompt() {
     const isOpen = jamNum >= startNum && jamNum < endNum;
     const jamRangeText = (currentBiz.kasir_call_start||'11:00') + '-' + (currentBiz.kasir_call_end||'22:00') + ' WIT';
     kasirCallRule = '\n\nATURAN KOMPLAIN / MAU BICARA LANGSUNG DENGAN STAF:\n'
-      + '- Kalau pelanggan komplain serius, minta bicara langsung dengan staf/kasir, atau AI merasa masalahnya perlu ditangani manusia:\n'
+      + '- Kalau pelanggan komplain serius (hasil kerja, pelayanan, dll), kumpulkan data ini secara natural lewat percakapan (boleh bertahap, jangan interogatif):\n'
+      + '  1) Nama pelanggan  2) Nomor HP/WA pelanggan  3) Tanggal pelayanan terkait  4) Barberman yang mengerjakan  5) Kronologi/duduk perkara komplain (apa yang terjadi)\n'
+      + '- Begitu data di atas terkumpul (boleh sebagian kalau pelanggan tidak tahu/tidak mau kasih sebagian), SELALU tampilkan dulu RESUME/RINGKASAN komplainnya ke pelanggan (poin-poin singkat), yakinkan bahwa ini akan ditindaklanjuti staf yang akan meninjau lalu MENELEPON pelanggan tersebut. Sampaikan dengan empati.\n'
+      + '- Setelah resume ditampilkan ke pelanggan, WAJIB tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur (Nama, HP, Tanggal Pelayanan, Barberman, Kronologi).\n'
+      + '- Kalau pelanggan mau lebih cepat / tidak mau nunggu ditelepon staf:\n'
       + (isOpen
-          ? '  Sekarang MASUK jam kerja kasir (' + jamRangeText + '). Berikan nomor ' + callNumber + ' untuk ditelepon langsung, dengan nada empati.'
-          : '  Sekarang DI LUAR jam kerja kasir (' + jamRangeText + '). JANGAN berikan nomor telepon sekarang. Sampaikan dengan empati bahwa staf bisa dihubungi di jam ' + jamRangeText + ', dan tawarkan untuk mencatat keluhannya sekarang supaya bisa ditindaklanjuti staf nanti.')
-      + '\n- Jangan berikan nomor telepon kasir untuk hal-hal umum (harga, jadwal, dll) — cukup untuk komplain/butuh bicara langsung dengan manusia.';
+          ? '  Sekarang MASUK jam kerja kasir (' + jamRangeText + '). Berikan nomor ' + callNumber + ' untuk ditelepon/WA langsung, dengan nada empati. Kalau komplainnya berkaitan dengan hasil kerja/kondisi tertentu yang sebaiknya dilihat (misal hasil potongan, kerusakan, dll), sebutkan pelanggan bisa langsung kirim foto atau video ke nomor itu juga supaya staf bisa langsung lihat kondisinya.'
+          : '  Sekarang DI LUAR jam kerja kasir (' + jamRangeText + '). JANGAN berikan nomor telepon sekarang. Sampaikan dengan empati bahwa staf bisa dihubungi di jam ' + jamRangeText + ' (bisa telepon/WA langsung, termasuk kirim foto/video kalau ada).')
+      + '\n- Jangan berikan nomor telepon kasir untuk hal-hal umum (harga, jadwal, dll) — cukup untuk komplain/butuh bicara langsung dengan manusia.'
+      + '\n- JANGAN tampilkan tag [NOTIF_KOMPLAIN] atau isinya secara terlihat ke pelanggan — itu hanya untuk sistem internal.';
   }
 
   return 'Kamu adalah ' + currentBiz.agentName + ', AI Agent untuk ' + currentBiz.name + ' (' + currentBiz.type + ').\n\n'
@@ -1208,6 +1227,33 @@ function resetPreviewConversation() {
   convHistory = [];
   document.getElementById('messages').innerHTML = '';
   appendMsg('ai', 'Halo! Saya '+currentBiz.agentName+', asisten AI untuk '+currentBiz.name+'. Ada yang bisa saya bantu? 😊');
+}
+
+function formatNotifKomplain(rawText, bizName) {
+  function exVal(text, keys) {
+    for (var i = 0; i < keys.length; i++) {
+      var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
+      var m = text.match(r);
+      if (m) return m[1].trim().replace(/^[-*\u2022]\s*/, '');
+    }
+    return '-';
+  }
+  var nama = exVal(rawText, ['Nama']);
+  var hp = exVal(rawText, ['No\\. HP', 'HP\\/WA', 'HP', 'Nomor HP']);
+  var tanggal = exVal(rawText, ['Tanggal Pelayanan', 'Tanggal']);
+  var barber = exVal(rawText, ['Barberman', 'Barber']);
+  var kronologi = exVal(rawText, ['Kronologi', 'Duduk Perkara', 'Kejadian']);
+
+  return '⚠️ ADA KOMPLAIN MASUK — ' + (bizName || '') + '\n\n'
+    + 'Resume Komplain:\n'
+    + '- Nama: ' + nama + '\n'
+    + '- No. HP/WA: ' + hp + '\n'
+    + '- Tanggal Pelayanan: ' + tanggal + '\n'
+    + '- Barberman: ' + barber + '\n'
+    + '- Kronologi: ' + kronologi + '\n\n'
+    + '📌 Catatan:\n'
+    + 'Bisa jadi sebentar lagi pelanggan ybs akan menelepon. Kasir baiknya telepon lebih dahulu saja. Sebelum menelepon, kasir cek dulu kebenaran data komplain ini di sistem: apakah tanggal pelayanannya cocok, barberman yang mengerjakan, cek CCTV dsb.\n\n'
+    + 'Saat komunikasi dengan pelanggan tsb, HARUS SERAMAH MUNGKIN dan jadilah pendengar yang baik. Minta foto dan videonya untuk kita analisa.';
 }
 
 function formatNotifKasir(rawText) {
