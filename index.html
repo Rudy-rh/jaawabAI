@@ -225,7 +225,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div>
           <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
-          <div class="cfg-field"><div class="cfg-label">WA Kasir</div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div class="cfg-field"><div class="cfg-label">WA Kasir (juga dipakai untuk nomor ditelepon)</div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div style="display:flex;gap:8px">
+            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam mulai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallStart" value="11:00"></div>
+            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam selesai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor di atas dipakai AI untuk 2 hal: (1) notifikasi WA booking ke kasir, (2) diberikan ke pelanggan yang komplain/mau bicara langsung — tapi HANYA kalau waktu sekarang (WIT) ada di rentang jam ini. Di luar jam ini, AI akan minta pelanggan telepon nanti.</div>
           <div class="cfg-sec-title" style="margin-top:8px">Notif Barberman</div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber &rarr; kasir + barber ybs (tanpa No. HP pelanggan)</div>
           <div class="cfg-field"><div class="cfg-label">Ahmad</div><input class="cfg-input" id="cfgBarberAhmad"></div>
@@ -292,7 +297,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
 <script>
 const BUSINESSES = [
-  {id:"barbershop",name:"Storee Barbershop",type:"Barbershop & grooming",icon:"✂️",agentName:"Rangga",goal:"convert",responseDelay:"random",fonnte_token:"TiuEHauA9BPGFDQedaiY",kasir_number:"0811485774",barberman_contacts:{Ahmad:"085252444739",Fajar:"082398191580",Onny:"089676637788",Wemmy:"081324764407"},knowledge:"Storee Barbershop Sorong - Comfort Yourself. Barbershop modern di Kota Sorong. Zona waktu WIT.\nAlamat: Jl. Jenderal Ahmad Yani No.21B, Kota Sorong. Jam: 11.00-21.45 WIT. WA Kasir: 0811485774.\nGoogle Maps: https://maps.app.goo.gl/storeebarber (SELALU sertakan link ini saat ditanya lokasi/alamat)\nPROMO: Diskon 10% Hair Cut (Rp 100.000 jadi Rp 90.000). Download app Storee Barber dapatkan ID QR Code tunjukkan ke kasir. HANYA untuk Hair Cut.\nHair Cut Rp 90rb (app)/100rb. Highlight Virgin+Ozone Rp210rb Abu+Ozone Rp280rb Fashion Alfaparf+Ozone Rp380rb. Coloring Basic+Ozone standar Rp160-180rb sebahu Rp190-210rb lebih sebahu mulai Rp210-240rb. Fashion Reguler+Ozone 0.3 Rp340rb 0.6 Rp550rb 1 mulai Rp690rb. Fashion Premium+Ozone 0.3 Rp720rb 0.6 Rp940rb 1 mulai Rp1.230rb. Hair Tatoo mulai Rp30rb Blow Rp40rb Catok Rp50rb Shaving Rp30rb Hair Wash Rp20rb. Keriting Light Rp250rb Standar Rp360rb Sebahu Rp460rb Lebih sebahu mulai Rp560rb. Hair Spa Loreal standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Tradisional standar Rp120rb sebahu Rp130rb lebih sebahu Rp140rb. Keratin standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Masking Plus standar Rp110rb plus pijat wajah Rp130rb. Smoothing standar Rp370rb sebahu Rp460rb lebih sebahu mulai Rp530rb. Keratin H+4 standar Rp410rb sebahu Rp510rb lebih sebahu mulai Rp580rb. Ozone O3 Rp50rb Massage Rp50rb Bentuk Alis Rp20rb Potong Poni Rp20rb.\nProduk: Pomade Starley Brewing Rp190rb Pharoah Rp200rb Murray Super Light/Nu Nail/Hair Glo Rp150rb Murray La Em Rp190rb Barbers Rp160rb Chief Blue Rp240rb. Serum Aminexil Loreal 6ml Rp90rb Minoxidil Canada 60ml Rp220rb Minoxidil FOAM 60ml Rp310rb Hair Tonic 100ml Rp80rb.\nJADWAL BARBERMAN: Senin Ahmad Onny Wemmy (Fajar libur). Selasa Ahmad Fajar Onny (Wemmy libur). Rabu Fajar Onny Wemmy (Ahmad libur). Kamis Ahmad Fajar Wemmy (Onny libur). Jumat-Minggu semua aktif.\nBOOKING: Tanyakan 7 data sekaligus: 1)Nama 2)HP 3)Jumlah orang 4)Layanan 5)Tanggal 6)Jam datang min 1 jam dari sekarang WIT 7)Barberman pilihan. Jika libur tawarkan barber lain atau ganti hari. Setelah data lengkap dan dikonfirmasi, WAJIB tambahkan tag [NOTIF_KASIR] diikuti detail booking.\nMedsos: IG @storeebarber.sorong FB Storee Barbershop TT @storeebarber Web storeebarbershop.com App Storee Barber Play Store.\nPANDUAN: Santai hangat natural seperti WA. Lokasi SELALU sertakan Google Maps. Booking tanyakan 7 data sekaligus. Barberman libur tawarkan alternatif. Diskon download app QR Code ke kasir HANYA Hair Cut.",scenarios:["Berapa harga potong rambut?","Jam buka sampai jam berapa?","Cara booking gimana?","Ada promo apa sekarang?","Mau coloring, berapa harganya?","Rabu ada yang libur tidak?"],stats:{conv:12,answered:47,leads:8}},
+  {id:"barbershop",name:"Storee Barbershop",type:"Barbershop & grooming",icon:"✂️",agentName:"Rangga",goal:"convert",responseDelay:"random",fonnte_token:"TiuEHauA9BPGFDQedaiY",kasir_number:"0811485774",kasir_call_start:"11:00",kasir_call_end:"22:00",barberman_contacts:{Ahmad:"085252444739",Fajar:"082398191580",Onny:"089676637788",Wemmy:"081324764407"},knowledge:"Storee Barbershop Sorong - Comfort Yourself. Barbershop modern di Kota Sorong. Zona waktu WIT.\nAlamat: Jl. Jenderal Ahmad Yani No.21B, Kota Sorong. Jam: 11.00-21.45 WIT. WA Kasir: 0811485774.\nGoogle Maps: https://maps.app.goo.gl/storeebarber (SELALU sertakan link ini saat ditanya lokasi/alamat)\nPROMO: Diskon 10% Hair Cut (Rp 100.000 jadi Rp 90.000). Download app Storee Barber dapatkan ID QR Code tunjukkan ke kasir. HANYA untuk Hair Cut.\nHair Cut Rp 90rb (app)/100rb. Highlight Virgin+Ozone Rp210rb Abu+Ozone Rp280rb Fashion Alfaparf+Ozone Rp380rb. Coloring Basic+Ozone standar Rp160-180rb sebahu Rp190-210rb lebih sebahu mulai Rp210-240rb. Fashion Reguler+Ozone 0.3 Rp340rb 0.6 Rp550rb 1 mulai Rp690rb. Fashion Premium+Ozone 0.3 Rp720rb 0.6 Rp940rb 1 mulai Rp1.230rb. Hair Tatoo mulai Rp30rb Blow Rp40rb Catok Rp50rb Shaving Rp30rb Hair Wash Rp20rb. Keriting Light Rp250rb Standar Rp360rb Sebahu Rp460rb Lebih sebahu mulai Rp560rb. Hair Spa Loreal standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Tradisional standar Rp120rb sebahu Rp130rb lebih sebahu Rp140rb. Keratin standar Rp140rb sebahu Rp150rb lebih sebahu Rp160rb. Masking Plus standar Rp110rb plus pijat wajah Rp130rb. Smoothing standar Rp370rb sebahu Rp460rb lebih sebahu mulai Rp530rb. Keratin H+4 standar Rp410rb sebahu Rp510rb lebih sebahu mulai Rp580rb. Ozone O3 Rp50rb Massage Rp50rb Bentuk Alis Rp20rb Potong Poni Rp20rb.\nProduk: Pomade Starley Brewing Rp190rb Pharoah Rp200rb Murray Super Light/Nu Nail/Hair Glo Rp150rb Murray La Em Rp190rb Barbers Rp160rb Chief Blue Rp240rb. Serum Aminexil Loreal 6ml Rp90rb Minoxidil Canada 60ml Rp220rb Minoxidil FOAM 60ml Rp310rb Hair Tonic 100ml Rp80rb.\nJADWAL BARBERMAN: Senin Ahmad Onny Wemmy (Fajar libur). Selasa Ahmad Fajar Onny (Wemmy libur). Rabu Fajar Onny Wemmy (Ahmad libur). Kamis Ahmad Fajar Wemmy (Onny libur). Jumat-Minggu semua aktif.\nBOOKING: Tanyakan 7 data sekaligus: 1)Nama 2)HP 3)Jumlah orang 4)Layanan 5)Tanggal 6)Jam datang min 1 jam dari sekarang WIT 7)Barberman pilihan. Jika libur tawarkan barber lain atau ganti hari. Setelah data lengkap dan dikonfirmasi, WAJIB tambahkan tag [NOTIF_KASIR] diikuti detail booking.\nMedsos: IG @storeebarber.sorong FB Storee Barbershop TT @storeebarber Web storeebarbershop.com App Storee Barber Play Store.\nPANDUAN: Santai hangat natural seperti WA. Lokasi SELALU sertakan Google Maps. Booking tanyakan 7 data sekaligus. Barberman libur tawarkan alternatif. Diskon download app QR Code ke kasir HANYA Hair Cut.",scenarios:["Berapa harga potong rambut?","Jam buka sampai jam berapa?","Cara booking gimana?","Ada promo apa sekarang?","Mau coloring, berapa harganya?","Rabu ada yang libur tidak?"],stats:{conv:12,answered:47,leads:8}},
   {id:"habitkeluarga",name:"Habit Keluarga X",type:"Aplikasi mobile",icon:"&#127969;",agentName:"Hana",goal:"convert",responseDelay:"random",fonnte_token:"",kasir_number:"",knowledge:"Habit Keluarga X - Aplikasi habit tracking untuk keluarga, tim, dan organisasi. Fitur: 1-100 anggota, habit harian/mingguan/bulanan, reward system, laporan, co-owner, AI Insight. Gratis: 1 anggota, 4 habit. Premium: Rp 100.000/bulan. Target: orang tua, manager, guru, pendidik.",scenarios:["Aplikasi ini untuk apa?","Berapa harganya?","Bedanya gratis dan premium apa?"],stats:{conv:5,answered:23,leads:6}},
   {id:"bubur",name:"Bubur Ayam Baba",type:"Kuliner",icon:"&#127834;",agentName:"Baba",goal:"convert",responseDelay:"random",fonnte_token:"",kasir_number:"",knowledge:"Bubur Ayam Baba - Khas Jakarta di Kota Sorong. Tagline: Rasanya Beda Bikin Nagih! Lokasi: Jl. Ahmad Yani, Depan Masjid Raya Al-Akbar, Kota Sorong. Jam: 05.30-11.00 WIT. Menu: Bubur Ayam Khas Jakarta, kerupuk & kecap dari Jakarta. GRATIS: Teh Hangat + Pisang Raja. Tempat nyaman, bersih, harga terjangkau.",scenarios:["Lokasi di mana?","Buka jam berapa?","Menu apa saja?","Ada yang gratis tidak?"],stats:{conv:0,answered:0,leads:0}}
 ];
@@ -390,6 +395,8 @@ function loadCfgForm() {
   document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
+  document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
+  document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
   const bc = currentBiz.barberman_contacts || {};
   document.getElementById('cfgBarberAhmad').value = bc.Ahmad || '';
   document.getElementById('cfgBarberFajar').value = bc.Fajar || '';
@@ -412,6 +419,8 @@ function saveConfig() {
   currentBiz.responseDelay = document.getElementById('cfgDelay').value;
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
+  currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
+  currentBiz.kasir_call_end = document.getElementById('cfgKasirCallEnd').value || '22:00';
   currentBiz.barberman_contacts = {Ahmad:document.getElementById('cfgBarberAhmad').value,Fajar:document.getElementById('cfgBarberFajar').value,Onny:document.getElementById('cfgBarberOnny').value,Wemmy:document.getElementById('cfgBarberWemmy').value};
   syncKb();
   saveBiz();
@@ -970,6 +979,7 @@ function buildPrompt() {
   const wit = new Date(now.getTime() + 9*60*60*1000);
   const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
   const hari = days[wit.getUTCDay()];
+  const jamNum = wit.getUTCHours() + wit.getUTCMinutes()/60;
   const jam = wit.getUTCHours().toString().padStart(2,'0') + '.' + wit.getUTCMinutes().toString().padStart(2,'0');
   const gm = {
     convert: 'Dorong pelanggan untuk booking/pembelian secara hangat dan persuasif.',
@@ -977,11 +987,29 @@ function buildPrompt() {
     onboarding: 'Panduan pengguna baru memahami produk.',
     faq: 'Jawab pertanyaan umum secara ringkas.'
   };
+
+  let kasirCallRule = '';
+  const callNumber = currentBiz.kasir_number;
+  if (callNumber) {
+    const [sh, sm] = (currentBiz.kasir_call_start || '11:00').split(':').map(Number);
+    const [eh, em] = (currentBiz.kasir_call_end || '22:00').split(':').map(Number);
+    const startNum = sh + sm/60, endNum = eh + em/60;
+    const isOpen = jamNum >= startNum && jamNum < endNum;
+    const jamRangeText = (currentBiz.kasir_call_start||'11:00') + '-' + (currentBiz.kasir_call_end||'22:00') + ' WIT';
+    kasirCallRule = '\n\nATURAN KOMPLAIN / MAU BICARA LANGSUNG DENGAN STAF:\n'
+      + '- Kalau pelanggan komplain serius, minta bicara langsung dengan staf/kasir, atau AI merasa masalahnya perlu ditangani manusia:\n'
+      + (isOpen
+          ? '  Sekarang MASUK jam kerja kasir (' + jamRangeText + '). Berikan nomor ' + callNumber + ' untuk ditelepon langsung, dengan nada empati.'
+          : '  Sekarang DI LUAR jam kerja kasir (' + jamRangeText + '). JANGAN berikan nomor telepon sekarang. Sampaikan dengan empati bahwa staf bisa dihubungi di jam ' + jamRangeText + ', dan tawarkan untuk mencatat keluhannya sekarang supaya bisa ditindaklanjuti staf nanti.')
+      + '\n- Jangan berikan nomor telepon kasir untuk hal-hal umum (harga, jadwal, dll) — cukup untuk komplain/butuh bicara langsung dengan manusia.';
+  }
+
   return 'Kamu adalah ' + currentBiz.agentName + ', AI Agent untuk ' + currentBiz.name + ' (' + currentBiz.type + ').\n\n'
     + 'MISI: ' + (gm[currentBiz.goal] || gm.convert) + '\n\n'
     + 'WAKTU SEKARANG: ' + hari + ', pukul ' + jam + ' WIT\n\n'
     + 'PENGETAHUAN BISNIS:\n' + currentBiz.knowledge + '\n\n'
-    + 'ATURAN:\n- Bahasa Indonesia santai & natural seperti chat WA\n- Singkat dan to the point\n- Jangan sebut kamu AI kalau tidak ditanya\n- Emoji secukupnya\n- Untuk booking: tanyakan 7 data sekaligus dalam 1 pesan\n- Selalu cek jadwal barberman & validasi waktu WIT';
+    + 'ATURAN:\n- Bahasa Indonesia santai & natural seperti chat WA\n- Singkat dan to the point\n- Jangan sebut kamu AI kalau tidak ditanya\n- Emoji secukupnya\n- Untuk booking: tanyakan 7 data sekaligus dalam 1 pesan\n- Selalu cek jadwal barberman & validasi waktu WIT'
+    + kasirCallRule;
 }
 
 const SUPABASE_URL = "https://jbmopxdepjyokxmnekcb.supabase.co";
@@ -1016,6 +1044,8 @@ async function loadBusinessesFromDB() {
       biz.responseDelay = row.response_delay || biz.responseDelay;
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
+      biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
       biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
       if (row.knowledge) biz.knowledge = row.knowledge;
       if (row.scenarios) biz.scenarios = row.scenarios;
@@ -1037,6 +1067,8 @@ async function saveBusinessToDB(biz) {
       response_delay: biz.responseDelay,
       fonnte_token: biz.fonnte_token,
       kasir_number: biz.kasir_number,
+      kasir_call_start: biz.kasir_call_start,
+      kasir_call_end: biz.kasir_call_end,
       barberman_contacts: biz.barberman_contacts,
       knowledge: biz.knowledge,
       updated_at: new Date().toISOString()
