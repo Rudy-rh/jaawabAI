@@ -1018,7 +1018,12 @@ async function sendMsg() {
       kirimKasir(notifKomplain, currentBiz.kasir_number, currentBiz.fonnte_token);
     }
     if (reply.includes('[NOTIF_KOMPLAIN]')) {
-      const replyBersih = reply.split('[NOTIF_KOMPLAIN]')[0].trimEnd();
+      let replyBersih = reply.split('[NOTIF_KOMPLAIN]')[0].trimEnd();
+      // Jaring pengaman: kalau AI salah format dan bagian sebelum tag kosong/terlalu pendek,
+      // jangan tampilkan itu ke pelanggan — pakai pesan default yang wajar.
+      if (replyBersih.replace(/[-\s]/g, '').length < 15) {
+        replyBersih = 'Baik kak, mohon maaf atas ketidaknyamanannya 🙏 Laporan komplain Kakak sudah kami catat dan akan ditindaklanjuti staf kami secepatnya.';
+      }
       const lastBubble = document.querySelector('#messages .msg.ai:last-child .bubble');
       if (lastBubble) {
         lastBubble.innerHTML = replyBersih.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
@@ -1060,8 +1065,13 @@ function buildPrompt() {
     kasirCallRule = '\n\nATURAN KOMPLAIN / MAU BICARA LANGSUNG DENGAN STAF:\n'
       + '- Kalau pelanggan komplain serius (hasil kerja, pelayanan, dll), kumpulkan data ini secara natural lewat percakapan (boleh bertahap, jangan interogatif):\n'
       + '  1) Nama pelanggan  2) Nomor HP/WA pelanggan  3) Tanggal pelayanan terkait  4) Barberman yang mengerjakan  5) Kronologi/duduk perkara komplain (apa yang terjadi)\n'
-      + '- Begitu data di atas terkumpul (boleh sebagian kalau pelanggan tidak tahu/tidak mau kasih sebagian), SELALU tampilkan dulu RESUME/RINGKASAN komplainnya ke pelanggan (poin-poin singkat), yakinkan bahwa ini akan ditindaklanjuti staf yang akan meninjau lalu MENELEPON pelanggan tersebut. Sampaikan dengan empati.\n'
-      + '- Setelah resume ditampilkan ke pelanggan, WAJIB tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur (Nama, HP, Tanggal Pelayanan, Barberman, Kronologi).\n'
+      + '- Begitu data di atas terkumpul (boleh sebagian kalau pelanggan tidak tahu/tidak mau kasih sebagian), tulis balasan ke pelanggan dengan urutan PERSIS seperti ini (WAJIB, jangan disingkat/dikosongkan):\n'
+      + '  (a) Kalimat empati singkat\n'
+      + '  (b) Resume/ringkasan komplain dalam poin-poin BERISI (tulis ulang datanya, JANGAN kosong/tanda "-" doang), contoh:\n'
+      + '      "Baik kak, ini saya catat ya:\\n- Tanggal: [isi]\\n- Barberman: [isi]\\n- Keluhan: [isi ringkas kronologinya]"\n'
+      + '  (c) Kalimat penutup: staf akan meninjau dan menelepon balik\n'
+      + '  (d) BARU setelah itu, di baris baru, tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur (Nama, HP, Tanggal Pelayanan, Barberman, Kronologi) — ini bagian TERSEMBUNYI, tidak akan dilihat pelanggan, jadi boleh lebih detail dari poin (b).\n'
+      + '  PENTING: bagian (a)-(c) WAJIB berisi kalimat lengkap dan resume yang benar-benar ada isinya, BUKAN placeholder kosong — karena hanya bagian SEBELUM tag [NOTIF_KOMPLAIN] yang akan ditampilkan ke pelanggan.\n'
       + '- Kalau pelanggan mau lebih cepat / tidak mau nunggu ditelepon staf:\n'
       + (isOpen
           ? '  Sekarang MASUK jam kerja kasir (' + jamRangeText + '). Berikan nomor ' + callNumber + ' untuk ditelepon/WA langsung, dengan nada empati. Kalau komplainnya berkaitan dengan hasil kerja/kondisi tertentu yang sebaiknya dilihat (misal hasil potongan, kerusakan, dll), sebutkan pelanggan bisa langsung kirim foto atau video ke nomor itu juga supaya staf bisa langsung lihat kondisinya.'
