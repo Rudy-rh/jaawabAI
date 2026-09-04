@@ -231,6 +231,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam selesai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor di atas dipakai AI untuk 2 hal: (1) notifikasi WA booking ke kasir, (2) diberikan ke pelanggan yang komplain/mau bicara langsung — tapi HANYA kalau waktu sekarang (WIT) ada di rentang jam ini. Di luar jam ini, AI akan minta pelanggan telepon nanti.</div>
+          <div class="cfg-field"><div class="cfg-label">Catatan Kaki Notifikasi Komplain (dikirim ke kasir)</div><textarea class="cfg-input" id="cfgKomplainNote" style="min-height:100px" placeholder="Catatan/instruksi tambahan untuk kasir saat ada komplain masuk..."></textarea></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Teks ini otomatis ditempel di bawah resume tiap komplain yang dikirim ke WA kasir. Murni instruksi untuk kasir — tidak ikut dibaca AI saat menjawab pelanggan.</div>
           <div class="cfg-sec-title" style="margin-top:8px">Notif Barberman</div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber &rarr; kasir + barber ybs (tanpa No. HP pelanggan)</div>
           <div class="cfg-field"><div class="cfg-label">Ahmad</div><input class="cfg-input" id="cfgBarberAhmad"></div>
@@ -397,6 +399,7 @@ function loadCfgForm() {
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
+  document.getElementById('cfgKomplainNote').value = currentBiz.komplain_note || DEFAULT_KOMPLAIN_NOTE;
   const bc = currentBiz.barberman_contacts || {};
   document.getElementById('cfgBarberAhmad').value = bc.Ahmad || '';
   document.getElementById('cfgBarberFajar').value = bc.Fajar || '';
@@ -421,6 +424,7 @@ function saveConfig() {
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
   currentBiz.kasir_call_end = document.getElementById('cfgKasirCallEnd').value || '22:00';
+  currentBiz.komplain_note = document.getElementById('cfgKomplainNote').value || DEFAULT_KOMPLAIN_NOTE;
   currentBiz.barberman_contacts = {Ahmad:document.getElementById('cfgBarberAhmad').value,Fajar:document.getElementById('cfgBarberFajar').value,Onny:document.getElementById('cfgBarberOnny').value,Wemmy:document.getElementById('cfgBarberWemmy').value};
   syncKb();
   saveBiz();
@@ -1010,7 +1014,7 @@ async function sendMsg() {
     }
     if (reply.includes('[NOTIF_KOMPLAIN]') && currentBiz.fonnte_token && currentBiz.kasir_number) {
       const rawKomplain = reply.split('[NOTIF_KOMPLAIN]')[1]?.trim() || '';
-      const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz.name);
+      const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz);
       kirimKasir(notifKomplain, currentBiz.kasir_number, currentBiz.fonnte_token);
     }
     if (reply.includes('[NOTIF_KOMPLAIN]')) {
@@ -1108,6 +1112,7 @@ async function loadBusinessesFromDB() {
       biz.kasir_number = row.kasir_number || biz.kasir_number;
       biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
       biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
+      biz.komplain_note = row.komplain_note || biz.komplain_note;
       biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
       if (row.knowledge) biz.knowledge = row.knowledge;
       if (row.scenarios) biz.scenarios = row.scenarios;
@@ -1131,6 +1136,7 @@ async function saveBusinessToDB(biz) {
       kasir_number: biz.kasir_number,
       kasir_call_start: biz.kasir_call_start,
       kasir_call_end: biz.kasir_call_end,
+      komplain_note: biz.komplain_note,
       barberman_contacts: biz.barberman_contacts,
       knowledge: biz.knowledge,
       updated_at: new Date().toISOString()
@@ -1229,7 +1235,9 @@ function resetPreviewConversation() {
   appendMsg('ai', 'Halo! Saya '+currentBiz.agentName+', asisten AI untuk '+currentBiz.name+'. Ada yang bisa saya bantu? 😊');
 }
 
-function formatNotifKomplain(rawText, bizName) {
+const DEFAULT_KOMPLAIN_NOTE = 'Bisa jadi sebentar lagi pelanggan ybs akan menelepon. Kasir baiknya telepon lebih dahulu saja. Sebelum menelepon, kasir cek dulu kebenaran data komplain ini di sistem: apakah tanggal pelayanannya cocok, barberman yang mengerjakan, cek CCTV dsb.\n\nSaat komunikasi dengan pelanggan tsb, HARUS SERAMAH MUNGKIN dan jadilah pendengar yang baik. Minta foto dan videonya untuk kita analisa.';
+
+function formatNotifKomplain(rawText, biz) {
   function exVal(text, keys) {
     for (var i = 0; i < keys.length; i++) {
       var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
@@ -1243,17 +1251,16 @@ function formatNotifKomplain(rawText, bizName) {
   var tanggal = exVal(rawText, ['Tanggal Pelayanan', 'Tanggal']);
   var barber = exVal(rawText, ['Barberman', 'Barber']);
   var kronologi = exVal(rawText, ['Kronologi', 'Duduk Perkara', 'Kejadian']);
+  var catatan = (biz && biz.komplain_note) ? biz.komplain_note : DEFAULT_KOMPLAIN_NOTE;
 
-  return '⚠️ ADA KOMPLAIN MASUK — ' + (bizName || '') + '\n\n'
+  return '⚠️ ADA KOMPLAIN MASUK — ' + (biz?.name || '') + '\n\n'
     + 'Resume Komplain:\n'
     + '- Nama: ' + nama + '\n'
     + '- No. HP/WA: ' + hp + '\n'
     + '- Tanggal Pelayanan: ' + tanggal + '\n'
     + '- Barberman: ' + barber + '\n'
     + '- Kronologi: ' + kronologi + '\n\n'
-    + '📌 Catatan:\n'
-    + 'Bisa jadi sebentar lagi pelanggan ybs akan menelepon. Kasir baiknya telepon lebih dahulu saja. Sebelum menelepon, kasir cek dulu kebenaran data komplain ini di sistem: apakah tanggal pelayanannya cocok, barberman yang mengerjakan, cek CCTV dsb.\n\n'
-    + 'Saat komunikasi dengan pelanggan tsb, HARUS SERAMAH MUNGKIN dan jadilah pendengar yang baik. Minta foto dan videonya untuk kita analisa.';
+    + '📌 Catatan:\n' + catatan;
 }
 
 function formatNotifKasir(rawText) {
