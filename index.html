@@ -587,7 +587,7 @@ async function extractFileText(file, instruction) {
   const prov = localStorage.getItem('jaawab_provider') || 'gemini';
   const prompt = instruction || 'Ekstrak semua informasi penting dari file ini. Tulis format teks biasa ringkas. Bahasa Indonesia.';
   if (prov === 'gemini' && gk) {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+gk, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{inline_data:{mime_type:file.type,data:b64}},{text:prompt}]}]})
     });
@@ -611,7 +611,7 @@ async function askAI(promptText, maxTokens) {
   const ck = localStorage.getItem('jaawab_api_key');
   const prov = localStorage.getItem('jaawab_provider') || 'gemini';
   if (prov === 'gemini' && gk) {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+gk, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({contents:[{parts:[{text:promptText}]}]})
     });
@@ -772,7 +772,7 @@ async function handleKbFile(ci, input) {
     const prov = localStorage.getItem('jaawab_provider') || 'gemini';
     let extracted = '';
     if (prov === 'gemini' && gk) {
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+gk, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({contents:[{parts:[{inline_data:{mime_type:file.type,data:b64}},{text:'Ekstrak semua informasi penting dari file ini. Tulis format teks biasa ringkas. Bahasa Indonesia.'}]}]})
       });
@@ -926,7 +926,7 @@ async function sendMsg() {
       reply = d.content?.[0]?.text || 'Maaf, ada gangguan.';
     } else {
       const msgs2 = historyForApi.map(m => ({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+gk, {
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+gk, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({system_instruction:{parts:[{text:prompt}]}, contents:msgs2, generationConfig:{maxOutputTokens:1000}})
       });
