@@ -1117,7 +1117,9 @@ function buildPrompt() {
       + '  (c) Resume/ringkasan komplain dalam poin-poin BERISI (tulis ulang datanya, JANGAN kosong/tanda "-" doang), contoh:\n'
       + '      "Baik kak, ini saya catat ya:\\n- Tanggal: [isi]\\n- Barberman: [isi]\\n- Keluhan: [isi ringkas kronologinya]"\n'
       + '  (d) Kalimat penutup yang sesuai (staf akan menyiapkan kedatangannya / staf akan meninjau dan menelepon balik)\n'
-      + '  (e) BARU setelah itu, di baris baru, tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur: Nama, HP, Tanggal Pelayanan, Barberman, Kronologi, dan Status Garansi (isi persis "Dalam Garansi" atau "Di Luar Garansi") — ini bagian TERSEMBUNYI, tidak akan dilihat pelanggan, jadi boleh lebih detail dari poin (c).\n'
+      + '  (e) BARU setelah itu, di baris baru, tambahkan tag [NOTIF_KOMPLAIN] diikuti data terstruktur, WAJIB satu field per baris (bukan dipisah tanda "|" atau koma dalam satu baris), format persis:\n'
+      + '      Nama: [isi]\\nHP: [isi]\\nTanggal Pelayanan: [isi]\\nBarberman: [isi]\\nKronologi: [isi]\\nStatus Garansi: [Dalam Garansi/Di Luar Garansi]\n'
+      + '      Ini bagian TERSEMBUNYI, tidak akan dilihat pelanggan, jadi boleh lebih detail dari poin (c).\n'
       + '  PENTING: bagian (a)-(d) WAJIB berisi kalimat lengkap yang benar-benar ada isinya, BUKAN placeholder kosong — karena hanya bagian SEBELUM tag [NOTIF_KOMPLAIN] yang akan ditampilkan ke pelanggan.\n'
       + '- Kalau pelanggan mau lebih cepat / tidak mau nunggu ditelepon staf (di kedua kasus garansi maupun tidak):\n'
       + (isOpen
@@ -1406,7 +1408,15 @@ function saveNotifEditor() {
 }
 
 
+function normalizeNotifRawText(rawText) {
+  if (!rawText) return '';
+  // Toleran terhadap AI yang menulis field dipisah " | " dalam satu baris,
+  // bukan baris terpisah seperti seharusnya — ubah jadi newline supaya parser tetap benar.
+  return rawText.replace(/\s*\|\s*/g, '\n');
+}
+
 function formatNotifKomplain(rawText, biz, cat) {
+  rawText = normalizeNotifRawText(rawText);
   function exVal(text, keys) {
     for (var i = 0; i < keys.length; i++) {
       var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
@@ -1437,6 +1447,7 @@ function formatNotifKomplain(rawText, biz, cat) {
 }
 
 function formatNotifKasir(rawText, cat) {
+  rawText = normalizeNotifRawText(rawText);
   function exVal(text, keys) {
     for (var i = 0; i < keys.length; i++) {
       var r = new RegExp(keys[i] + '[:\\s]+([^\\n]+)', 'i');
