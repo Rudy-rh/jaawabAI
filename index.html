@@ -202,6 +202,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <button class="kb-tab active" onclick="switchKbTab('structured',this)">&#128203; Terstruktur</button>
             <button class="kb-tab" onclick="switchKbTab('raw',this)">&#128221; Teks Bebas</button>
           </div>
+          <div class="notif-field-row" style="margin-bottom:10px">
+            <input class="cfg-input" style="margin:0;flex:1" id="kbSearchInput" placeholder="Cari kata di semua kategori KB... (misal: Wemmy)" oninput="searchKb(this.value)">
+          </div>
+          <div id="kbSearchResults"></div>
           <div id="kbStructured"></div>
           <div id="kbRaw" style="display:none">
             <textarea class="kb-area" id="cfgKnowledge" style="min-height:180px" placeholder="Paste semua info bisnis di sini, atau upload PDF/gambar/dokumen di bawah..." oninput="autoResizeKb(this)"></textarea>
@@ -545,6 +549,55 @@ function addKbCat() {
   kbData[currentBiz.id].push({id:'cat_'+Date.now(), icon:icons[kbData[currentBiz.id].length%5], label, text:''});
   saveKb(currentBiz.id);
   renderKbManager(currentBiz.id);
+}
+
+function searchKb(query) {
+  const box = document.getElementById('kbSearchResults');
+  const structDiv = document.getElementById('kbStructured');
+  query = (query || '').trim();
+  if (!query || !currentBiz || !kbData[currentBiz.id]) {
+    box.innerHTML = '';
+    if (structDiv) structDiv.style.opacity = '1';
+    return;
+  }
+  const q = query.toLowerCase();
+  const cats = kbData[currentBiz.id];
+  const hits = [];
+  cats.forEach(function(cat, ci) {
+    const text = cat.text || '';
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return;
+    let count = 0, pos = -1;
+    while ((pos = text.toLowerCase().indexOf(q, pos + 1)) !== -1) count++;
+    const snippetStart = Math.max(0, idx - 35);
+    const snippet = (snippetStart > 0 ? '…' : '') + text.slice(snippetStart, idx + q.length + 35) + (idx + q.length + 35 < text.length ? '…' : '');
+    hits.push({ ci: ci, label: cat.label, icon: cat.icon, count: count, snippet: snippet });
+  });
+  if (hits.length === 0) {
+    box.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Tidak ditemukan "' + query.replace(/</g,'&lt;') + '" di kategori manapun.</div>';
+  } else {
+    box.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ditemukan di ' + hits.length + ' kategori:</div>'
+      + hits.map(function(h) {
+          const safeSnippet = h.snippet.replace(/</g,'&lt;').replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'ig'), '<b style="color:var(--accent)">$1</b>');
+          return '<div class="notif-cat-card" style="cursor:pointer" onclick="jumpToKbCat(' + h.ci + ')">'
+            + '<div style="font-size:12px;font-weight:600;margin-bottom:4px">' + h.icon + ' ' + h.label + ' <span style="color:var(--muted);font-weight:400">(' + h.count + 'x)</span></div>'
+            + '<div style="font-size:11px;color:var(--muted)">' + safeSnippet + '</div>'
+          + '</div>';
+        }).join('');
+  }
+}
+
+function jumpToKbCat(ci) {
+  document.getElementById('kbSearchInput').value = '';
+  document.getElementById('kbSearchResults').innerHTML = '';
+  const el = document.getElementById('kbc_' + ci);
+  if (el) {
+    if (!el.classList.contains('open')) toggleCat(ci);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.transition = 'box-shadow .3s';
+    el.style.boxShadow = '0 0 0 2px var(--accent)';
+    setTimeout(function() { el.style.boxShadow = 'none'; }, 1500);
+  }
 }
 
 function renameKbCat(ci, event) {
