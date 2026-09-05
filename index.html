@@ -208,6 +208,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div id="kbSearchResults"></div>
           <div id="kbStructured"></div>
           <div id="kbRaw" style="display:none">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+              <button class="kb-expand-btn" onclick="openRawEditor()" title="Edit layar penuh">&#x26F6; Perluas</button>
+            </div>
             <textarea class="kb-area" id="cfgKnowledge" style="min-height:180px" placeholder="Paste semua info bisnis di sini, atau upload PDF/gambar/dokumen di bawah..." oninput="autoResizeKb(this)"></textarea>
             <div class="kb-file-row">
               <label class="kb-file-btn">&#128196; Upload PDF/Gambar
@@ -952,11 +955,24 @@ function syncKb() {
 function autoResizeKb(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }
 
 var _editorCatIdx = -1;
+var _editorIsRaw = false;
+
+function openRawEditor() {
+  if (!currentBiz) return;
+  _editorIsRaw = true;
+  _editorCatIdx = -1;
+  document.getElementById('editorIcon').textContent = '📝';
+  document.getElementById('editorLabel').textContent = 'Teks Bebas (Knowledge Base)';
+  document.getElementById('editorTextarea').value = document.getElementById('cfgKnowledge').value;
+  document.getElementById('editorModal').classList.add('open');
+  setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
+}
 
 function openEditor(ci) {
   if (!currentBiz || !kbData[currentBiz.id]) return;
   const cat = kbData[currentBiz.id][ci];
   if (!cat) return;
+  _editorIsRaw = false;
   _editorCatIdx = ci;
   document.getElementById('editorIcon').textContent = cat.icon;
   document.getElementById('editorLabel').textContent = cat.label;
@@ -968,11 +984,20 @@ function openEditor(ci) {
 function closeEditor() {
   document.getElementById('editorModal').classList.remove('open');
   _editorCatIdx = -1;
+  _editorIsRaw = false;
 }
 
 function saveEditor() {
-  if (_editorCatIdx < 0 || !currentBiz || !kbData[currentBiz.id]) return;
   const val = document.getElementById('editorTextarea').value;
+  if (_editorIsRaw) {
+    // Teks Bebas: kembalikan ke textarea, belum tersimpan permanen —
+    // pakai tombol "Simpan (tanpa AI)" atau "Strukturkan dengan AI" di bawahnya untuk benar-benar menyimpan.
+    document.getElementById('cfgKnowledge').value = val;
+    autoResizeKb(document.getElementById('cfgKnowledge'));
+    closeEditor();
+    return;
+  }
+  if (_editorCatIdx < 0 || !currentBiz || !kbData[currentBiz.id]) return;
   kbData[currentBiz.id][_editorCatIdx].text = val;
   saveKb(currentBiz.id);
   syncKb();
