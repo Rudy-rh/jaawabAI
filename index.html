@@ -80,7 +80,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .cfg-panel{width:280px;min-width:280px;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:12px}
 .cfg-sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
 .cfg-field{margin-bottom:8px}
-.cfg-label{font-size:11px;color:var(--muted);margin-bottom:3px}
+.cfg-label{font-size:11px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
 .cfg-input,.cfg-select{width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
 .cfg-input:focus,.cfg-select:focus{border-color:var(--accent)}
 .save-btn{width:100%;padding:9px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
@@ -244,8 +244,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau tanggal pelayanan yang dikomplain masih dalam rentang ini, AI akan bilang itu masuk garansi (bisa langsung datang ke tempat). Lewat dari ini, AI akan bilang perlu diteruskan ke manajemen dulu.</div>
           <div style="display:flex;gap:8px">
-            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam mulai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallStart" value="11:00"></div>
-            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam selesai bisa ditelepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
+            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam Mulai Telepon</div><input class="cfg-input" type="time" id="cfgKasirCallStart" value="11:00"></div>
+            <div class="cfg-field" style="flex:1"><div class="cfg-label">Jam Selesai Telepon</div><input class="cfg-input" type="time" id="cfgKasirCallEnd" value="22:00"></div>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor di atas dipakai AI untuk 2 hal: (1) diberikan ke pelanggan yang komplain/mau bicara langsung, (2) target default untuk kategori Pesan Khusus di bawah — tapi HANYA kalau waktu sekarang (WIT) ada di rentang jam ini. Di luar jam ini, AI akan minta pelanggan telepon nanti.</div>
           <div class="cfg-sec-title" style="margin-top:8px">Pesan Khusus (Header/Footer)</div>
