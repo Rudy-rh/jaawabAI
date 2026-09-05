@@ -551,6 +551,8 @@ function addKbCat() {
   const icons = ['📌','💡','ℹ','📋','🔖'];
   kbData[currentBiz.id].push({id:'cat_'+Date.now(), icon:icons[kbData[currentBiz.id].length%5], label, text:''});
   saveKb(currentBiz.id);
+  syncKb();
+  refreshRawTabIfVisible();
   renderKbManager(currentBiz.id);
 }
 
