@@ -1274,10 +1274,11 @@ async function loadBusinessesFromDB() {
 }
 
 async function saveBusinessToDB(biz) {
-  await sbFetch("businesses?id=eq." + biz.id, {
-    method: "PATCH",
-    prefer: "return=minimal",
+  await sbFetch("businesses", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates,return=minimal",
     body: JSON.stringify({
+      id: biz.id,
       name: biz.name,
       type: biz.type,
       icon: biz.icon,
@@ -1645,8 +1646,10 @@ function useScenario(t) { document.getElementById('chatInput').value = t; sendMs
 function addBusiness() {
   const name = prompt('Nama bisnis baru:'); if (!name) return;
   const id = 'biz_' + Date.now();
-  BUSINESSES.push({id, name, type:'Bisnis baru', icon:'&#127970;', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}});
+  const newBiz = {id, name, type:'Bisnis baru', icon:'&#127970;', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}};
+  BUSINESSES.push(newBiz);
   saveBiz(); renderBizList(); selectBiz(id);
+  saveBusinessToDB(newBiz).then(function() { console.log('Bisnis baru tersimpan ke Supabase:', id); });
 }
 
 function renameBiz() {
