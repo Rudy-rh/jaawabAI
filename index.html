@@ -246,11 +246,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div id="notifCatList"></div>
           <button class="add-btn" style="width:100%" onclick="addNotifCategory()">+ Tambah kategori</button>
           <div class="cfg-sec-title" style="margin-top:8px">Notif Barberman</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber &rarr; kasir + barber ybs (tanpa No. HP pelanggan)</div>
-          <div class="cfg-field"><div class="cfg-label">Ahmad</div><input class="cfg-input" id="cfgBarberAhmad"></div>
-          <div class="cfg-field"><div class="cfg-label">Fajar</div><input class="cfg-input" id="cfgBarberFajar"></div>
-          <div class="cfg-field"><div class="cfg-label">Onny</div><input class="cfg-input" id="cfgBarberOnny"></div>
-          <div class="cfg-field"><div class="cfg-label">Wemmy</div><input class="cfg-input" id="cfgBarberWemmy"></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber → kasir + barber ybs (tanpa No. HP pelanggan). Kalau ada barberman resign/masuk baru, tambah/hapus/rename di sini — tapi INGAT juga update jadwal barberman di Knowledge Base secara manual (nama di teks KB tidak ikut berubah otomatis).</div>
+          <div id="barbermenList"></div>
+          <button class="add-btn" style="width:100%" onclick="addBarberman()">+ Tambah Barberman</button>
         </div>
         <button class="save-btn" onclick="saveConfig()">Simpan &amp; Terapkan</button>
         <div>
@@ -431,11 +429,8 @@ function loadCfgForm() {
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
   ensureNotifCategories(currentBiz);
   renderNotifCategories();
-  const bc = currentBiz.barberman_contacts || {};
-  document.getElementById('cfgBarberAhmad').value = bc.Ahmad || '';
-  document.getElementById('cfgBarberFajar').value = bc.Fajar || '';
-  document.getElementById('cfgBarberOnny').value = bc.Onny || '';
-  document.getElementById('cfgBarberWemmy').value = bc.Wemmy || '';
+  ensureBarbermen(currentBiz);
+  renderBarbermenList();
   document.getElementById('statConv').textContent = currentBiz.stats?.conv || 0;
   document.getElementById('statAns').textContent = currentBiz.stats?.answered || 0;
   document.getElementById('statLead').textContent = currentBiz.stats?.leads || 0;
@@ -458,7 +453,8 @@ function saveConfig() {
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
   currentBiz.kasir_call_end = document.getElementById('cfgKasirCallEnd').value || '22:00';
   // notif_categories sudah ter-update langsung di currentBiz lewat interaksi kartu (lihat renderNotifCategories)
-  currentBiz.barberman_contacts = {Ahmad:document.getElementById('cfgBarberAhmad').value,Fajar:document.getElementById('cfgBarberFajar').value,Onny:document.getElementById('cfgBarberOnny').value,Wemmy:document.getElementById('cfgBarberWemmy').value};
+  // barberman_contacts sekarang di-build otomatis dari currentBiz.barbermen (lihat renderBarbermenList)
+  syncBarbermanContacts(currentBiz);
   syncKb();
   saveBiz();
   // Simpan ke Supabase
@@ -1188,6 +1184,7 @@ async function loadBusinessesFromDB() {
       biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
       biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
       biz.notif_categories = row.notif_categories || biz.notif_categories;
+      biz.barbermen = row.barbermen || biz.barbermen;
       biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
       if (row.knowledge) biz.knowledge = row.knowledge;
       if (row.scenarios) biz.scenarios = row.scenarios;
@@ -1213,6 +1210,7 @@ async function saveBusinessToDB(biz) {
       kasir_call_start: biz.kasir_call_start,
       kasir_call_end: biz.kasir_call_end,
       notif_categories: biz.notif_categories,
+      barbermen: biz.barbermen,
       barberman_contacts: biz.barberman_contacts,
       knowledge: biz.knowledge,
       updated_at: new Date().toISOString()
@@ -1420,6 +1418,58 @@ function saveNotifEditor() {
   currentBiz.notif_categories[_notifEditIdx][_notifEditField] = document.getElementById('notifEditorTextarea').value;
   closeNotifEditor();
   renderNotifCategories();
+}
+
+// ==================== DAFTAR BARBERMAN (dinamis) ====================
+function ensureBarbermen(biz) {
+  if (biz.barbermen && biz.barbermen.length) return;
+  // Migrasi dari data lama (object barberman_contacts) kalau ada
+  const bc = biz.barberman_contacts || {};
+  const names = Object.keys(bc);
+  biz.barbermen = names.length
+    ? names.map(function(n) { return { name: n, phone: bc[n] || '' }; })
+    : [];
+}
+
+function syncBarbermanContacts(biz) {
+  const obj = {};
+  (biz.barbermen || []).forEach(function(b) { if (b.name) obj[b.name] = b.phone || ''; });
+  biz.barberman_contacts = obj;
+}
+
+function renderBarbermenList() {
+  if (!currentBiz) return;
+  ensureBarbermen(currentBiz);
+  const box = document.getElementById('barbermenList');
+  box.innerHTML = currentBiz.barbermen.map(function(b, i) {
+    return '<div class="notif-field-row">'
+      + '<input class="cfg-input" style="margin:0;flex:1" value="' + (b.name||'').replace(/"/g,'&quot;') + '" placeholder="Nama barberman" oninput="updateBarbermanField(' + i + ',\'name\',this.value)">'
+      + '<input class="cfg-input" style="margin:0;flex:1" value="' + (b.phone||'').replace(/"/g,'&quot;') + '" placeholder="No. HP" oninput="updateBarbermanField(' + i + ',\'phone\',this.value)">'
+      + '<button class="icon-btn danger" style="width:26px;height:26px" title="Hapus" onclick="deleteBarberman(' + i + ')">&#128465;</button>'
+    + '</div>';
+  }).join('') || '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Belum ada barberman. Klik "+ Tambah Barberman" di bawah.</div>';
+}
+
+function updateBarbermanField(i, field, val) {
+  if (!currentBiz) return;
+  currentBiz.barbermen[i][field] = val;
+  syncBarbermanContacts(currentBiz);
+}
+
+function deleteBarberman(i) {
+  if (!currentBiz) return;
+  const b = currentBiz.barbermen[i];
+  if (!confirm('Hapus barberman "' + (b.name || '(tanpa nama)') + '"?\n\nIngat: nama ini mungkin masih disebut di teks Knowledge Base (jadwal, dll) — update itu manual juga ya.')) return;
+  currentBiz.barbermen.splice(i, 1);
+  syncBarbermanContacts(currentBiz);
+  renderBarbermenList();
+}
+
+function addBarberman() {
+  if (!currentBiz) return;
+  ensureBarbermen(currentBiz);
+  currentBiz.barbermen.push({ name: '', phone: '' });
+  renderBarbermenList();
 }
 
 
