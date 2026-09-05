@@ -655,8 +655,15 @@ async function callGeminiAPI(gk, body) {
   let res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + gk, {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
   });
-  if (!res.ok && (res.status === 404 || res.status === 503)) {
-    // Model peringkat-3 lagi bermasalah, coba kandidat lain (lebih lama/lebih baru) sebagai cadangan
+  if (!res.ok && res.status === 429) {
+    // Kena limit request-per-menit — biasanya reset dalam hitungan detik, coba lagi sebentar
+    await new Promise(r => setTimeout(r, 2500));
+    res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + gk, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+  }
+  if (!res.ok && (res.status === 404 || res.status === 503 || res.status === 429)) {
+    // Masih bermasalah — coba model kandidat lain (lebih lama/lebih baru) sebagai cadangan
     const alt = await getGeminiModel(gk, model);
     if (alt && alt !== model) {
       res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + alt + ':generateContent?key=' + gk, {
@@ -1080,8 +1087,9 @@ async function sendMsg() {
     }
     saveConversationMessage(currentBiz.id, getCustomerId(), 'assistant', savedReply);
   } catch(e) {
+    console.error('AI error:', e);
     removeTyping();
-    appendMsg('ai', 'Error: ' + (e.message || 'Koneksi bermasalah.'));
+    appendMsg('ai', 'Waduh maaf kak, sistem lagi sedikit sibuk 🙏 Boleh dicoba kirim pesannya sekali lagi?');
   }
   document.getElementById('sendBtn').disabled = false;
   document.getElementById('chatInput').focus();
