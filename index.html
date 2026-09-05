@@ -240,7 +240,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div>
           <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
-          <div class="cfg-field"><div class="cfg-label">WA Kasir (juga dipakai untuk nomor ditelepon)</div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px"><span id="kasirLabelText">WA Kasir</span> (juga dipakai untuk nomor ditelepon) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Admin, CS)" onclick="renameKasirLabel()">&#9998;</button></div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau tanggal pelayanan yang dikomplain masih dalam rentang ini, AI akan bilang itu masuk garansi (bisa langsung datang ke tempat). Lewat dari ini, AI akan bilang perlu diteruskan ke manajemen dulu.</div>
           <div style="display:flex;gap:8px">
@@ -252,10 +252,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Tiap kategori notifikasi (Booking, Komplain, dst) punya HP tujuan + header/footer sendiri yang otomatis ditempel ke pesan WA. Klik ikon layar untuk edit teks panjang dengan nyaman.</div>
           <div id="notifCatList"></div>
           <button class="add-btn" style="width:100%" onclick="addNotifCategory()">+ Tambah kategori</button>
-          <div class="cfg-sec-title" style="margin-top:8px">Notif Barberman</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Pilih barber → kasir + barber ybs (tanpa No. HP pelanggan). Kalau ada barberman resign/masuk baru, tambah/hapus/rename di sini — tapi INGAT juga update jadwal barberman di Knowledge Base secara manual (nama di teks KB tidak ikut berubah otomatis).</div>
+          <div class="cfg-sec-title" style="margin-top:8px;display:flex;align-items:center;gap:4px">Notif <span id="staffLabelText">Barberman</span> <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Kurir, Staff)" onclick="renameStaffLabel()">&#9998;</button></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px" id="staffHintText">Pilih barber → kasir + barber ybs (tanpa No. HP pelanggan). Kalau ada barberman resign/masuk baru, tambah/hapus/rename di sini — tapi INGAT juga update jadwal barberman di Knowledge Base secara manual (nama di teks KB tidak ikut berubah otomatis).</div>
           <div id="barbermenList"></div>
-          <button class="add-btn" style="width:100%" onclick="addBarberman()">+ Tambah Barberman</button>
+          <button class="add-btn" style="width:100%" id="addStaffBtn" onclick="addBarberman()">+ Tambah Barberman</button>
         </div>
         <button class="save-btn" onclick="saveConfig()">Simpan &amp; Terapkan</button>
         <div>
@@ -437,7 +437,8 @@ function loadCfgForm() {
   ensureNotifCategories(currentBiz);
   renderNotifCategories();
   ensureBarbermen(currentBiz);
-  renderBarbermenList();
+  document.getElementById('kasirLabelText').textContent = 'WA ' + (currentBiz.kasir_label || 'Kasir');
+  applyStaffLabel();
   document.getElementById('statConv').textContent = currentBiz.stats?.conv || 0;
   document.getElementById('statAns').textContent = currentBiz.stats?.answered || 0;
   document.getElementById('statLead').textContent = currentBiz.stats?.leads || 0;
@@ -1264,6 +1265,8 @@ async function loadBusinessesFromDB() {
       biz.responseDelay = row.response_delay || biz.responseDelay;
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.kasir_label = row.kasir_label || biz.kasir_label;
+      biz.staff_label = row.staff_label || biz.staff_label;
       biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
       biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
       biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
@@ -1291,6 +1294,8 @@ async function saveBusinessToDB(biz) {
       response_delay: biz.responseDelay,
       fonnte_token: biz.fonnte_token,
       kasir_number: biz.kasir_number,
+      kasir_label: biz.kasir_label,
+      staff_label: biz.staff_label,
       garansi_hari: biz.garansi_hari,
       kasir_call_start: biz.kasir_call_start,
       kasir_call_end: biz.kasir_call_end,
@@ -1512,6 +1517,37 @@ function saveNotifEditor() {
 }
 
 // ==================== DAFTAR BARBERMAN (dinamis) ====================
+function renameKasirLabel() {
+  if (!currentBiz) return;
+  const cur = currentBiz.kasir_label || 'Kasir';
+  const val = prompt('Sebutan untuk peran ini (contoh: Kasir, Admin, CS):', cur);
+  if (val === null) return;
+  const trimmed = val.trim();
+  if (!trimmed) { alert('Tidak boleh kosong'); return; }
+  currentBiz.kasir_label = trimmed;
+  document.getElementById('kasirLabelText').textContent = 'WA ' + trimmed;
+}
+
+function renameStaffLabel() {
+  if (!currentBiz) return;
+  const cur = currentBiz.staff_label || 'Barberman';
+  const val = prompt('Sebutan untuk daftar staf ini (contoh: Barberman, Kurir, Staff):', cur);
+  if (val === null) return;
+  const trimmed = val.trim();
+  if (!trimmed) { alert('Tidak boleh kosong'); return; }
+  currentBiz.staff_label = trimmed;
+  applyStaffLabel();
+}
+
+function applyStaffLabel() {
+  if (!currentBiz) return;
+  const label = currentBiz.staff_label || 'Barberman';
+  document.getElementById('staffLabelText').textContent = label;
+  document.getElementById('addStaffBtn').textContent = '+ Tambah ' + label;
+  document.getElementById('staffHintText').textContent = 'Kalau ada ' + label.toLowerCase() + ' resign/masuk baru, tambah/hapus/rename di sini — tapi INGAT juga update jadwal ' + label.toLowerCase() + ' di Knowledge Base secara manual (nama di teks KB tidak ikut berubah otomatis).';
+  renderBarbermenList();
+}
+
 function ensureBarbermen(biz) {
   if (biz.barbermen && biz.barbermen.length) return;
   // Migrasi dari data lama (object barberman_contacts) kalau ada
@@ -1531,14 +1567,15 @@ function syncBarbermanContacts(biz) {
 function renderBarbermenList() {
   if (!currentBiz) return;
   ensureBarbermen(currentBiz);
+  const label = currentBiz.staff_label || 'Barberman';
   const box = document.getElementById('barbermenList');
   box.innerHTML = currentBiz.barbermen.map(function(b, i) {
     return '<div class="notif-field-row">'
-      + '<input class="cfg-input" style="margin:0;flex:1" value="' + (b.name||'').replace(/"/g,'&quot;') + '" placeholder="Nama barberman" oninput="updateBarbermanField(' + i + ',\'name\',this.value)">'
+      + '<input class="cfg-input" style="margin:0;flex:1" value="' + (b.name||'').replace(/"/g,'&quot;') + '" placeholder="Nama ' + label.toLowerCase() + '" oninput="updateBarbermanField(' + i + ',\'name\',this.value)">'
       + '<input class="cfg-input" style="margin:0;flex:1" value="' + (b.phone||'').replace(/"/g,'&quot;') + '" placeholder="No. HP" oninput="updateBarbermanField(' + i + ',\'phone\',this.value)">'
       + '<button class="icon-btn danger" style="width:26px;height:26px" title="Hapus" onclick="deleteBarberman(' + i + ')">&#128465;</button>'
     + '</div>';
-  }).join('') || '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Belum ada barberman. Klik "+ Tambah Barberman" di bawah.</div>';
+  }).join('') || '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Belum ada ' + label.toLowerCase() + '. Klik "+ Tambah ' + label + '" di bawah.</div>';
 }
 
 function updateBarbermanField(i, field, val) {
