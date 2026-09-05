@@ -465,8 +465,12 @@ function saveConfig() {
   syncKb();
   saveBiz();
   // Simpan ke Supabase
-  saveBusinessToDB(currentBiz).then(function() {
-    console.log('Saved to Supabase:', currentBiz.id);
+  saveBusinessToDB(currentBiz).then(function(ok) {
+    if (ok) {
+      console.log('Saved to Supabase:', currentBiz.id);
+    } else {
+      alert('⚠️ Gagal menyimpan ke database (Supabase). Perubahan tersimpan sementara di browser ini saja, tapi TIDAK akan muncul di device lain / setelah cache dibersihkan. Cek Console (F12) untuk detail error, atau kirim screenshot-nya ke Claude.');
+    }
   });
   document.getElementById('topName').textContent = currentBiz.name;
   document.getElementById('topDesc').textContent = 'AI Agent: '+currentBiz.agentName+' — '+currentBiz.type;
@@ -1274,9 +1278,9 @@ async function loadBusinessesFromDB() {
 }
 
 async function saveBusinessToDB(biz) {
-  await sbFetch("businesses", {
+  const res = await sbFetch("businesses?on_conflict=id", {
     method: "POST",
-    prefer: "resolution=merge-duplicates,return=minimal",
+    prefer: "resolution=merge-duplicates,return=representation",
     body: JSON.stringify({
       id: biz.id,
       name: biz.name,
@@ -1297,6 +1301,12 @@ async function saveBusinessToDB(biz) {
       updated_at: new Date().toISOString()
     })
   });
+  if (res === null) {
+    console.error('GAGAL simpan ke Supabase untuk business id:', biz.id, '(lihat log "Supabase error" di atas untuk detail)');
+    return false;
+  }
+  console.log('Berhasil upsert ke Supabase:', res);
+  return true;
 }
 
 async function loadKbFromDB(bizId) {
