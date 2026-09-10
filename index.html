@@ -241,6 +241,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px"><span id="kasirLabelText">WA Kasir</span> (juga dipakai untuk nomor ditelepon) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Admin, CS)" onclick="renameKasirLabel()">&#9998;</button></div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau tanggal pelayanan yang dikomplain masih dalam rentang ini, AI akan bilang itu masuk garansi (bisa langsung datang ke tempat). Lewat dari ini, AI akan bilang perlu diteruskan ke manajemen dulu.</div>
           <div style="display:flex;gap:8px">
@@ -431,6 +433,7 @@ function loadCfgForm() {
   document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
+  document.getElementById('cfgManager').value = currentBiz.manager_number || '';
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
@@ -456,6 +459,7 @@ function saveConfig() {
   currentBiz.responseDelay = document.getElementById('cfgDelay').value;
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
+  currentBiz.manager_number = document.getElementById('cfgManager').value;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
@@ -1265,6 +1269,7 @@ async function loadBusinessesFromDB() {
       biz.responseDelay = row.response_delay || biz.responseDelay;
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.manager_number = row.manager_number || biz.manager_number;
       biz.kasir_label = row.kasir_label || biz.kasir_label;
       biz.staff_label = row.staff_label || biz.staff_label;
       biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
@@ -1294,6 +1299,7 @@ async function saveBusinessToDB(biz) {
       response_delay: biz.responseDelay,
       fonnte_token: biz.fonnte_token,
       kasir_number: biz.kasir_number,
+      manager_number: biz.manager_number,
       kasir_label: biz.kasir_label,
       staff_label: biz.staff_label,
       garansi_hari: biz.garansi_hari,
@@ -1454,6 +1460,7 @@ function renderNotifCategories() {
       + '<div class="notif-field-row"><div class="notif-field-label">HP tujuan</div><input class="cfg-input" style="margin:0;flex:1" value="' + (cat.target || '').replace(/"/g,'&quot;') + '" placeholder="0811485774" oninput="updateNotifTarget(' + i + ',this.value)"></div>'
       + '<div class="notif-field-row"><div class="notif-field-label">Header</div><div class="notif-field-preview' + (cat.header ? '' : ' empty') + '" onclick="openNotifEditor(' + i + ',\'header\')">' + headerPreview + '</div></div>'
       + '<div class="notif-field-row"><div class="notif-field-label">Footer</div><div class="notif-field-preview' + (cat.footer ? '' : ' empty') + '" onclick="openNotifEditor(' + i + ',\'footer\')">' + footerPreview + '</div></div>'
+      + '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px;cursor:pointer"><input type="checkbox" ' + (cat.cc_manager ? 'checked' : '') + ' onchange="toggleNotifCcManager(' + i + ',this.checked)"> CC ke WA Manager</label>'
     + '</div>';
   }).join('');
 }
@@ -1461,6 +1468,11 @@ function renderNotifCategories() {
 function updateNotifTarget(i, val) {
   if (!currentBiz) return;
   currentBiz.notif_categories[i].target = val;
+}
+
+function toggleNotifCcManager(i, checked) {
+  if (!currentBiz) return;
+  currentBiz.notif_categories[i].cc_manager = checked;
 }
 
 function renameNotifCategory(i) {
