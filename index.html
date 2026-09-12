@@ -1088,36 +1088,21 @@ async function sendMsg() {
   saveConversationMessage(currentBiz.id, getCustomerId(), 'user', text);
   showTyping();
   try {
-    const prompt = buildPrompt();
-    const historyForApi = convHistory.slice(-CONV_HISTORY_LIMIT);
-    const prov = localStorage.getItem('jaawab_provider') || 'gemini';
-    const gk = localStorage.getItem('jaawab_gemini_key');
-    const ck = localStorage.getItem('jaawab_api_key');
-    if (prov==='claude' && !ck) { removeTyping(); showApiModal(); document.getElementById('sendBtn').disabled=false; return; }
-    if (prov==='gemini' && !gk) { removeTyping(); showApiModal(); document.getElementById('sendBtn').disabled=false; return; }
-    let reply = '';
-    if (prov === 'claude') {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json','x-api-key':ck,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,system:prompt,messages:historyForApi})
-      });
-      const d = await res.json();
-      if (d.error) throw new Error(d.error.message);
-      reply = d.content?.[0]?.text || 'Maaf, ada gangguan.';
-    } else {
-      const msgs2 = historyForApi.map(m => ({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-      const res = await callGeminiAPI(gk, {system_instruction:{parts:[{text:prompt}]}, contents:msgs2, generationConfig:{maxOutputTokens:2000}});
-      const d = await res.json();
-      if (d.error) throw new Error('Gemini '+d.error.code+': '+d.error.message);
-      reply = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, ada gangguan.';
-    }
+    const historyForApi = convHistory.slice(0, -1).slice(-CONV_HISTORY_LIMIT);
+    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ preview: true, business_id: currentBiz.id, message: text, history: historyForApi })
+    });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    const reply = d.reply || 'Maaf, ada gangguan.';
+
     const delay = getDelay(reply.length);
     if (delay > 0) await new Promise(r => setTimeout(r, delay));
     removeTyping();
     appendMsg('ai', reply);
     convHistory.push({role:'assistant', content:reply});
-    let savedReply = reply;
     if (currentBiz.stats) {
       currentBiz.stats.answered++;
       document.getElementById('statAns').textContent = currentBiz.stats.answered;
@@ -1127,50 +1112,10 @@ async function sendMsg() {
         document.getElementById('statLead').textContent = currentBiz.stats.leads;
       }
     }
-    if (reply.includes('[NOTIF_KASIR]') && currentBiz.fonnte_token) {
-      const rawNotif = reply.split('[NOTIF_KASIR]')[1]?.trim() || '';
-      const bookingCat = getNotifCat(currentBiz, 'booking');
-      const target = bookingCat.target || currentBiz.kasir_number;
-      if (target) {
-        const notifKasir = formatNotifKasir(rawNotif, bookingCat);
-        kirimNotifBooking(notifKasir, currentBiz.fonnte_token, target, currentBiz.barberman_contacts);
-      }
-    }
-    if (reply.includes('[NOTIF_KASIR]')) {
-      const replyBersih = reply.split('[NOTIF_KASIR]')[0].trimEnd();
-      const penutup = '\n\nKaka, jangan terlewat tiba sebelum jam booking ya, supaya tidak berubah tercatat menjadi antrian biasa.. 🙏';
-      const lastBubble = document.querySelector('#messages .msg.ai:last-child .bubble');
-      if (lastBubble) {
-        const fullReply = replyBersih + penutup;
-        lastBubble.innerHTML = fullReply.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-      }
-      if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih + penutup;
-      savedReply = replyBersih + penutup;
-    }
-    if (reply.includes('[NOTIF_KOMPLAIN]') && currentBiz.fonnte_token) {
-      const rawKomplain = reply.split('[NOTIF_KOMPLAIN]')[1]?.trim() || '';
-      const komplainCat = getNotifCat(currentBiz, 'komplain');
-      const target = komplainCat.target || currentBiz.kasir_number;
-      if (target) {
-        const notifKomplain = formatNotifKomplain(rawKomplain, currentBiz, komplainCat);
-        kirimKasir(notifKomplain, target, currentBiz.fonnte_token);
-      }
-    }
-    if (reply.includes('[NOTIF_KOMPLAIN]')) {
-      let replyBersih = reply.split('[NOTIF_KOMPLAIN]')[0].trimEnd();
-      // Jaring pengaman: kalau AI salah format dan bagian sebelum tag kosong/terlalu pendek,
-      // jangan tampilkan itu ke pelanggan — pakai pesan default yang wajar.
-      if (replyBersih.replace(/[-\s]/g, '').length < 15) {
-        replyBersih = 'Baik kak, mohon maaf atas ketidaknyamanannya 🙏 Laporan komplain Kakak sudah kami catat dan akan ditindaklanjuti staf kami secepatnya.';
-      }
-      const lastBubble = document.querySelector('#messages .msg.ai:last-child .bubble');
-      if (lastBubble) {
-        lastBubble.innerHTML = replyBersih.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-      }
-      if (convHistory.length > 0) convHistory[convHistory.length-1].content = replyBersih;
-      savedReply = replyBersih;
-    }
-    saveConversationMessage(currentBiz.id, getCustomerId(), 'assistant', savedReply);
+    // Catatan: preview ini TIDAK mengirim WA sungguhan ke kasir/manager/pelanggan (aman untuk testing/latihan),
+    // dan otomatis ikut semua logic terbaru di webhook produksi (jadwal override, tukar/cuti barberman, dst)
+    // karena manggil Edge Function yang sama, bukan lagi duplikasi prompt terpisah di browser.
+    saveConversationMessage(currentBiz.id, getCustomerId(), 'assistant', reply);
   } catch(e) {
     console.error('AI error:', e);
     removeTyping();
