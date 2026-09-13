@@ -1204,28 +1204,35 @@ async function loadBusinessesFromDB() {
   const data = await sbFetch("businesses?select=*");
   if (!data || !data.length) return false;
   data.forEach(row => {
-    const biz = BUSINESSES.find(b => b.id === row.id);
-    if (biz) {
-      biz.name = row.name || biz.name;
-      biz.type = row.type || biz.type;
-      biz.icon = row.icon || biz.icon;
-      biz.agentName = row.agent_name || biz.agentName;
-      biz.goal = row.goal || biz.goal;
-      biz.responseDelay = row.response_delay || biz.responseDelay;
-      biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
-      biz.kasir_number = row.kasir_number || biz.kasir_number;
-      biz.manager_number = row.manager_number || biz.manager_number;
-      biz.kasir_label = row.kasir_label || biz.kasir_label;
-      biz.staff_label = row.staff_label || biz.staff_label;
-      biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
-      biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
-      biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
-      biz.notif_categories = row.notif_categories || biz.notif_categories;
-      biz.barbermen = row.barbermen || biz.barbermen;
-      biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
-      if (row.knowledge) biz.knowledge = row.knowledge;
-      if (row.scenarios) biz.scenarios = row.scenarios;
+    let biz = BUSINESSES.find(b => b.id === row.id);
+    if (!biz) {
+      // Bisnis ini dibuat lewat dashboard (bukan bagian dari 3 bisnis bawaan) ->
+      // sebelumnya baris ini dilewati begitu saja, sekarang ditambahkan ke daftar
+      // supaya tetap muncul lagi setiap kali halaman di-refresh.
+      biz = { id: row.id, name: row.name || 'Bisnis Baru', type: row.type || '', icon: row.icon || '🏢',
+        agentName: row.agent_name || 'Asisten', goal: row.goal || 'convert', responseDelay: row.response_delay || 'random',
+        fonnte_token: '', kasir_number: '', knowledge: '', scenarios: [], stats: { conv: 0, answered: 0, leads: 0 } };
+      BUSINESSES.push(biz);
     }
+    biz.name = row.name || biz.name;
+    biz.type = row.type || biz.type;
+    biz.icon = row.icon || biz.icon;
+    biz.agentName = row.agent_name || biz.agentName;
+    biz.goal = row.goal || biz.goal;
+    biz.responseDelay = row.response_delay || biz.responseDelay;
+    biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
+    biz.kasir_number = row.kasir_number || biz.kasir_number;
+    biz.manager_number = row.manager_number || biz.manager_number;
+    biz.kasir_label = row.kasir_label || biz.kasir_label;
+    biz.staff_label = row.staff_label || biz.staff_label;
+    biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
+    biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
+    biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
+    biz.notif_categories = row.notif_categories || biz.notif_categories;
+    biz.barbermen = row.barbermen || biz.barbermen;
+    biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
+    if (row.knowledge) biz.knowledge = row.knowledge;
+    if (row.scenarios) biz.scenarios = row.scenarios;
   });
   return true;
 }
