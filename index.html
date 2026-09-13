@@ -1650,7 +1650,7 @@ function useScenario(t) { document.getElementById('chatInput').value = t; sendMs
 function addBusiness() {
   const name = prompt('Nama bisnis baru:'); if (!name) return;
   const id = 'biz_' + Date.now();
-  const newBiz = {id, name, type:'Bisnis baru', icon:'&#127970;', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}};
+  const newBiz = {id, name, type:'Bisnis baru', icon:'🏢', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}};
   BUSINESSES.push(newBiz);
   saveBiz(); renderBizList(); selectBiz(id);
   saveBusinessToDB(newBiz).then(function() { console.log('Bisnis baru tersimpan ke Supabase:', id); });
