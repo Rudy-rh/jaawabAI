@@ -655,7 +655,7 @@ function addKbCat() {
   if (!currentBiz || !kbData[currentBiz.id]) return;
   const label = prompt('Nama kategori (contoh: FAQ, Promo Ramadan):');
   if (!label) return;
-  const icons = ['📌','💡','ℹ','📋','🔖'];
+  const icons = ['📌','💡','ℹ️','📋','🔖'];
   kbData[currentBiz.id].push({id:'cat_'+Date.now(), icon:icons[kbData[currentBiz.id].length%5], label, text:''});
   saveKb(currentBiz.id);
   syncKb();
@@ -944,7 +944,7 @@ function saveRawPlain() {
     return;
   }
   const cats = kbData[currentBiz.id];
-  const icons = ['📌','💡','ℹ','📋','🔖'];
+  const icons = ['📌','💡','ℹ️','📋','🔖'];
   blocks.forEach(function(blk) {
     const existing = findMatchingCat(cats, blk.label);
     if (existing) {
@@ -987,7 +987,7 @@ async function structureWithAI(event) {
     if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Hasil AI kosong/tidak valid');
 
     const cats = kbData[currentBiz.id];
-    const icons = ['📌','💡','ℹ','📋','🔖'];
+    const icons = ['📌','💡','ℹ️','📋','🔖'];
     parsed.forEach(function(item) {
       if (!item.label || !item.text) return;
       const existing = findMatchingCat(cats, item.label);
