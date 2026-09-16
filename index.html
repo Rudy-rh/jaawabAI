@@ -320,9 +320,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <button class="editor-close" onclick="closeEditor()">&#x2715;</button>
     </div>
     <textarea class="editor-textarea" id="editorTextarea" placeholder="Ketik atau paste informasi di sini..."></textarea>
+    <div id="editorHint" class="kb-file-hint" style="display:none;padding:0 4px 8px"></div>
     <div class="editor-foot">
       <button class="editor-cancel" onclick="closeEditor()">Batal</button>
-      <button class="editor-save" onclick="saveEditor()">&#x2713; Simpan</button>
+      <button class="editor-save" id="editorSaveBtn" onclick="saveEditor()">&#x2713; Simpan</button>
     </div>
   </div>
 </div>
@@ -1073,6 +1074,10 @@ function openRawEditor() {
   document.getElementById('editorIcon').textContent = '📝';
   document.getElementById('editorLabel').textContent = 'Teks Bebas (Knowledge Base)';
   document.getElementById('editorTextarea').value = document.getElementById('cfgKnowledge').value;
+  document.getElementById('editorSaveBtn').textContent = 'Terapkan ke kotak';
+  const hint = document.getElementById('editorHint');
+  hint.style.display = 'block';
+  hint.textContent = '⚠️ Tombol ini BELUM menyimpan ke database — setelah "Terapkan", masih harus klik "Simpan (tanpa AI)" (kalau pakai format === NAMA KATEGORI ===) atau "Strukturkan dengan AI" (untuk teks bebas biasa) di bawah kotak teksnya.';
   document.getElementById('editorModal').classList.add('open');
   setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
 }
@@ -1086,6 +1091,8 @@ function openEditor(ci) {
   document.getElementById('editorIcon').textContent = cat.icon;
   document.getElementById('editorLabel').textContent = cat.label;
   document.getElementById('editorTextarea').value = cat.text || '';
+  document.getElementById('editorSaveBtn').textContent = '✓ Simpan';
+  document.getElementById('editorHint').style.display = 'none';
   document.getElementById('editorModal').classList.add('open');
   setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
 }
