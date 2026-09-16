@@ -531,13 +531,34 @@ function renderAttachments() {
     <div class="notif-cat-card" style="margin-bottom:8px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <img src="${a.image_url}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600">${a.label}</div>
-          <div style="font-size:12.5px;color:var(--text-dim,#9aa)">${a.description}</div>
+        <div style="flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word">
+          <div style="font-weight:600;overflow-wrap:break-word;word-break:break-word">${a.label}</div>
+          <div style="font-size:12.5px;color:var(--text-dim,#9aa);overflow-wrap:break-word;word-break:break-word">${a.description}</div>
         </div>
-        <button class="kb-file-btn" style="padding:4px 8px" onclick="deleteAttachment('${a.id}')" title="Hapus">&#128465;</button>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="editAttachment('${a.id}')" title="Edit">&#9998;</button>
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="deleteAttachment('${a.id}')" title="Hapus">&#128465;</button>
+        </div>
       </div>
     </div>`).join('') || '<div class="kb-file-hint">Belum ada lampiran gambar.</div>';
+}
+
+async function editAttachment(id) {
+  const bizId = currentBiz?.id;
+  const item = (attachData[bizId] || []).find(a => a.id === id);
+  if (!item) return;
+
+  const newLabel = prompt('Ubah nama singkat lampiran (TANPA spasi):', item.label);
+  if (newLabel === null) return; // batal
+  const newDescription = prompt('Ubah deskripsi kapan gambar ini relevan:', item.description);
+  if (newDescription === null) return; // batal
+
+  await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify({ label: newLabel, description: newDescription })
+  });
+  await loadAttachments(bizId);
 }
 
 async function addAttachment(input) {
