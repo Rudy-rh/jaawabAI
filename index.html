@@ -92,10 +92,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .kb-tabs{display:flex;gap:3px;background:var(--bg);border-radius:7px;padding:3px;margin-bottom:8px}
 .kb-tab{flex:1;padding:5px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);font-family:var(--font);transition:all .15s;text-align:center}
 .kb-tab.active{background:var(--surface2);color:var(--text)}
-.kb-cat{border:1px solid var(--border);border-radius:7px;margin-bottom:6px;overflow:hidden}
+.kb-cat{border:1px solid var(--border);border-radius:7px;margin-bottom:6px;overflow:hidden;transition:opacity .15s,border-color .15s}
+.kb-cat.dragging{opacity:.4}
+.kb-cat.drag-over{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .kb-cat-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);cursor:pointer}
 .kb-cat-head:hover{background:var(--border)}
 .kb-cat-title{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.kb-drag-handle{cursor:grab;color:var(--muted);font-size:13px;letter-spacing:-2px;padding:0 2px;user-select:none}
+.kb-drag-handle:active{cursor:grabbing}
 .kb-cat-arrow{font-size:10px;color:var(--muted);transition:transform .2s}
 .kb-cat.open .kb-cat-arrow{transform:rotate(90deg)}
 .kb-cat-body{display:none;padding:8px;border-top:1px solid var(--border)}
@@ -226,17 +230,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
-          <div class="cfg-sec-title">Lampiran Gambar (IG/FB &amp; In-App)</div>
-          <div class="kb-file-hint" style="margin-bottom:8px">
-            Gambar di sini BEDA dari upload di Knowledge Base — bukan diekstrak jadi teks, tapi disimpan utuh dan bisa
-            dikirim AI Agent langsung ke pelanggan (via IG/FB, atau in-app chat) kalau relevan dengan pertanyaan.
-          </div>
-          <div id="attachList"></div>
-          <label class="kb-file-btn" style="margin-top:6px;display:inline-block">&#128247; Tambah Lampiran
-            <input type="file" accept="image/*" style="display:none" onchange="addAttachment(this)">
-          </label>
-        </div>
-        <div>
           <div class="cfg-sec-title">Kecepatan Respon</div>
           <select class="cfg-select" id="cfgDelay" onchange="updateDelayPreview()">
             <option value="instant">Langsung (instan)</option>
@@ -320,10 +313,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <button class="editor-close" onclick="closeEditor()">&#x2715;</button>
     </div>
     <textarea class="editor-textarea" id="editorTextarea" placeholder="Ketik atau paste informasi di sini..."></textarea>
-    <div id="editorHint" class="kb-file-hint" style="display:none;padding:0 4px 8px"></div>
     <div class="editor-foot">
       <button class="editor-cancel" onclick="closeEditor()">Batal</button>
-      <button class="editor-save" id="editorSaveBtn" onclick="saveEditor()">&#x2713; Simpan</button>
+      <button class="editor-save" onclick="saveEditor()">&#x2713; Simpan</button>
     </div>
   </div>
 </div>
@@ -513,93 +505,6 @@ async function loadKbForBiz(bizId) {
   }
   renderKbManager(bizId);
   syncKb();
-  loadAttachments(bizId);
-}
-
-// ==================== LAMPIRAN GAMBAR (IG/FB & in-app) ====================
-let attachData = {}; // { bizId: [{id, label, description, image_url}, ...] }
-
-async function loadAttachments(bizId) {
-  const rows = await sbFetch("kb_attachments?business_id=eq." + encodeURIComponent(bizId) + "&select=*&order=created_at.asc");
-  attachData[bizId] = rows || [];
-  renderAttachments();
-}
-
-function renderAttachments() {
-  const bizId = currentBiz?.id;
-  const list = attachData[bizId] || [];
-  document.getElementById('attachList').innerHTML = list.map(a => `
-    <div class="notif-cat-card" style="margin-bottom:8px">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <img src="${a.image_url}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
-        <div style="flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word">
-          <div style="font-weight:600;overflow-wrap:break-word;word-break:break-word">${a.label}</div>
-          <div style="font-size:12.5px;color:var(--text-dim,#9aa);overflow-wrap:break-word;word-break:break-word">${a.description}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-          <button class="kb-file-btn" style="padding:4px 8px" onclick="editAttachment('${a.id}')" title="Edit">&#9998;</button>
-          <button class="kb-file-btn" style="padding:4px 8px" onclick="deleteAttachment('${a.id}')" title="Hapus">&#128465;</button>
-        </div>
-      </div>
-    </div>`).join('') || '<div class="kb-file-hint">Belum ada lampiran gambar.</div>';
-}
-
-async function editAttachment(id) {
-  const bizId = currentBiz?.id;
-  const item = (attachData[bizId] || []).find(a => a.id === id);
-  if (!item) return;
-
-  const newLabel = prompt('Ubah nama singkat lampiran (TANPA spasi):', item.label);
-  if (newLabel === null) return; // batal
-  const newDescription = prompt('Ubah deskripsi kapan gambar ini relevan:', item.description);
-  if (newDescription === null) return; // batal
-
-  await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), {
-    method: 'PATCH',
-    prefer: 'return=minimal',
-    body: JSON.stringify({ label: newLabel, description: newDescription })
-  });
-  await loadAttachments(bizId);
-}
-
-async function addAttachment(input) {
-  const file = input.files[0]; if (!file) return;
-  const bizId = currentBiz?.id; if (!bizId) return;
-
-  const label = prompt('Nama singkat lampiran ini (dipakai AI untuk memilih, TANPA spasi, misal: contoh_hasil_potong_1):');
-  if (!label) { input.value = ''; return; }
-  const description = prompt('Kapan gambar ini relevan dikirim ke pelanggan? (dibaca AI, tidak dilihat pelanggan)\nMisal: "Contoh hasil potong rambut model undercut, kirim kalau pelanggan tanya contoh gaya rambut"');
-  if (!description) { input.value = ''; return; }
-
-  try {
-    // Upload file mentah ke Supabase Storage (bucket publik "kb-attachments")
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = bizId + '/' + Date.now() + '_' + label.replace(/[^a-zA-Z0-9_-]/g, '') + '.' + ext;
-    const uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/kb-attachments/' + path, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': file.type },
-      body: file
-    });
-    if (!uploadRes.ok) { alert('Gagal upload gambar ke Storage. Pastikan bucket "kb-attachments" sudah dibuat & bersifat publik.'); input.value = ''; return; }
-    const imageUrl = SUPABASE_URL + '/storage/v1/object/public/kb-attachments/' + path;
-
-    // Simpan metadata-nya ke tabel kb_attachments
-    await sbFetch('kb_attachments', {
-      method: 'POST',
-      prefer: 'return=minimal',
-      body: JSON.stringify({ business_id: bizId, label, description, image_url: imageUrl })
-    });
-    await loadAttachments(bizId);
-  } catch (e) {
-    alert('Error: ' + e.message);
-  }
-  input.value = '';
-}
-
-async function deleteAttachment(id) {
-  if (!confirm('Hapus lampiran ini?')) return;
-  await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
-  await loadAttachments(currentBiz.id);
 }
 
 function saveKb(bizId) {
@@ -615,9 +520,14 @@ function renderKbManager(bizId) {
   initKb(bizId);
   const cats = kbData[bizId] || [];
   el.innerHTML = cats.map((cat,ci) => `
-    <div class="kb-cat" id="kbc_${ci}">
+    <div class="kb-cat" id="kbc_${ci}" draggable="true"
+      ondragstart="kbDragStart(${ci},event)"
+      ondragover="kbDragOver(${ci},event)"
+      ondragleave="kbDragLeave(${ci},event)"
+      ondrop="kbDrop(${ci},event)"
+      ondragend="kbDragEnd(event)">
         <div class="kb-cat-head" onclick="toggleCat(${ci})">
-          <div class="kb-cat-title"><span>${cat.icon}</span><span>${cat.label}</span></div>
+          <div class="kb-cat-title"><span class="kb-drag-handle" title="Tahan &amp; geser untuk urutkan">&#8942;&#8942;</span><span>${cat.icon}</span><span>${cat.label}</span></div>
           <div style="display:flex;align-items:center;gap:2px">
             <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameKbCat(${ci},event)">&#9998;</button>
             <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Gabung ke kategori lain" onclick="mergeKbCat(${ci},event)">&#128279;</button>
@@ -644,6 +554,42 @@ function renderKbManager(bizId) {
 
 function toggleCat(ci) { document.getElementById('kbc_'+ci)?.classList.toggle('open'); }
 
+// --- Drag & drop untuk urutkan kategori KB ---
+let kbDragCi = null;
+function kbDragStart(ci, ev) {
+  kbDragCi = ci;
+  ev.dataTransfer.effectAllowed = 'move';
+  try { ev.dataTransfer.setData('text/plain', String(ci)); } catch(e) {}
+  ev.currentTarget.classList.add('dragging');
+}
+function kbDragOver(ci, ev) {
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  if (kbDragCi !== null && kbDragCi !== ci) {
+    document.getElementById('kbc_'+ci)?.classList.add('drag-over');
+  }
+}
+function kbDragLeave(ci, ev) {
+  document.getElementById('kbc_'+ci)?.classList.remove('drag-over');
+}
+function kbDrop(ci, ev) {
+  ev.preventDefault();
+  document.getElementById('kbc_'+ci)?.classList.remove('drag-over');
+  if (kbDragCi === null || kbDragCi === ci || !currentBiz || !kbData[currentBiz.id]) { kbDragCi = null; return; }
+  const arr = kbData[currentBiz.id];
+  const moved = arr.splice(kbDragCi, 1)[0];
+  arr.splice(ci, 0, moved);
+  kbDragCi = null;
+  saveKb(currentBiz.id);
+  syncKb();
+  refreshRawTabIfVisible();
+  renderKbManager(currentBiz.id);
+}
+function kbDragEnd(ev) {
+  document.querySelectorAll('.kb-cat.dragging,.kb-cat.drag-over').forEach(e=>e.classList.remove('dragging','drag-over'));
+  kbDragCi = null;
+}
+
 function updateKbCat(ci, val) {
   if (!currentBiz || !kbData[currentBiz.id]) return;
   kbData[currentBiz.id][ci].text = val;
@@ -656,7 +602,7 @@ function addKbCat() {
   if (!currentBiz || !kbData[currentBiz.id]) return;
   const label = prompt('Nama kategori (contoh: FAQ, Promo Ramadan):');
   if (!label) return;
-  const icons = ['📌','💡','ℹ️','📋','🔖'];
+  const icons = ['📌','💡','ℹ','📋','🔖'];
   kbData[currentBiz.id].push({id:'cat_'+Date.now(), icon:icons[kbData[currentBiz.id].length%5], label, text:''});
   saveKb(currentBiz.id);
   syncKb();
@@ -945,7 +891,7 @@ function saveRawPlain() {
     return;
   }
   const cats = kbData[currentBiz.id];
-  const icons = ['📌','💡','ℹ️','📋','🔖'];
+  const icons = ['📌','💡','ℹ','📋','🔖'];
   blocks.forEach(function(blk) {
     const existing = findMatchingCat(cats, blk.label);
     if (existing) {
@@ -988,7 +934,7 @@ async function structureWithAI(event) {
     if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Hasil AI kosong/tidak valid');
 
     const cats = kbData[currentBiz.id];
-    const icons = ['📌','💡','ℹ️','📋','🔖'];
+    const icons = ['📌','💡','ℹ','📋','🔖'];
     parsed.forEach(function(item) {
       if (!item.label || !item.text) return;
       const existing = findMatchingCat(cats, item.label);
@@ -1074,10 +1020,6 @@ function openRawEditor() {
   document.getElementById('editorIcon').textContent = '📝';
   document.getElementById('editorLabel').textContent = 'Teks Bebas (Knowledge Base)';
   document.getElementById('editorTextarea').value = document.getElementById('cfgKnowledge').value;
-  document.getElementById('editorSaveBtn').textContent = 'Terapkan ke kotak';
-  const hint = document.getElementById('editorHint');
-  hint.style.display = 'block';
-  hint.textContent = '⚠️ Tombol ini BELUM menyimpan ke database — setelah "Terapkan", masih harus klik "Simpan (tanpa AI)" (kalau pakai format === NAMA KATEGORI ===) atau "Strukturkan dengan AI" (untuk teks bebas biasa) di bawah kotak teksnya.';
   document.getElementById('editorModal').classList.add('open');
   setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
 }
@@ -1091,8 +1033,6 @@ function openEditor(ci) {
   document.getElementById('editorIcon').textContent = cat.icon;
   document.getElementById('editorLabel').textContent = cat.label;
   document.getElementById('editorTextarea').value = cat.text || '';
-  document.getElementById('editorSaveBtn').textContent = '✓ Simpan';
-  document.getElementById('editorHint').style.display = 'none';
   document.getElementById('editorModal').classList.add('open');
   setTimeout(function() { document.getElementById('editorTextarea').focus(); }, 100);
 }
@@ -1160,19 +1100,14 @@ function aiAvatarHtml() {
     : '<div class="avatar">🤖</div>';
 }
 
-function appendMsg(role, text, images) {
+function appendMsg(role, text) {
   const msgs = document.getElementById('messages');
   const now = new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-  const imagesHtml = (images && images.length)
-    ? '<div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">' +
-      images.map(img => `<img src="${img.image_url}" alt="${img.label||''}" style="max-width:220px;border-radius:10px;display:block" />`).join('') +
-      '</div>'
-    : '';
-  if (role === 'ai') div.innerHTML = `${aiAvatarHtml()}<div><div class="bubble">${safe}${imagesHtml}</div><div class="msg-time">${currentBiz?.agentName||'AI'} · ${now}</div></div>`;
-  else div.innerHTML = `<div class="avatar">👤</div><div><div class="bubble">${safe}${imagesHtml}</div><div class="msg-time">${now}</div></div>`;
+  if (role === 'ai') div.innerHTML = `${aiAvatarHtml()}<div><div class="bubble">${safe}</div><div class="msg-time">${currentBiz?.agentName||'AI'} · ${now}</div></div>`;
+  else div.innerHTML = `<div class="avatar">👤</div><div><div class="bubble">${safe}</div><div class="msg-time">${now}</div></div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -1207,12 +1142,11 @@ async function sendMsg() {
     const d = await res.json();
     if (d.error) throw new Error(d.error);
     const reply = d.reply || 'Maaf, ada gangguan.';
-    const attachmentsToShow = Array.isArray(d.attachments) ? d.attachments : [];
 
     const delay = getDelay(reply.length);
     if (delay > 0) await new Promise(r => setTimeout(r, delay));
     removeTyping();
-    appendMsg('ai', reply, attachmentsToShow);
+    appendMsg('ai', reply);
     convHistory.push({role:'assistant', content:reply});
     if (currentBiz.stats) {
       currentBiz.stats.answered++;
@@ -1315,35 +1249,28 @@ async function loadBusinessesFromDB() {
   const data = await sbFetch("businesses?select=*");
   if (!data || !data.length) return false;
   data.forEach(row => {
-    let biz = BUSINESSES.find(b => b.id === row.id);
-    if (!biz) {
-      // Bisnis ini dibuat lewat dashboard (bukan bagian dari 3 bisnis bawaan) ->
-      // sebelumnya baris ini dilewati begitu saja, sekarang ditambahkan ke daftar
-      // supaya tetap muncul lagi setiap kali halaman di-refresh.
-      biz = { id: row.id, name: row.name || 'Bisnis Baru', type: row.type || '', icon: row.icon || '🏢',
-        agentName: row.agent_name || 'Asisten', goal: row.goal || 'convert', responseDelay: row.response_delay || 'random',
-        fonnte_token: '', kasir_number: '', knowledge: '', scenarios: [], stats: { conv: 0, answered: 0, leads: 0 } };
-      BUSINESSES.push(biz);
+    const biz = BUSINESSES.find(b => b.id === row.id);
+    if (biz) {
+      biz.name = row.name || biz.name;
+      biz.type = row.type || biz.type;
+      biz.icon = row.icon || biz.icon;
+      biz.agentName = row.agent_name || biz.agentName;
+      biz.goal = row.goal || biz.goal;
+      biz.responseDelay = row.response_delay || biz.responseDelay;
+      biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
+      biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.manager_number = row.manager_number || biz.manager_number;
+      biz.kasir_label = row.kasir_label || biz.kasir_label;
+      biz.staff_label = row.staff_label || biz.staff_label;
+      biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
+      biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
+      biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
+      biz.notif_categories = row.notif_categories || biz.notif_categories;
+      biz.barbermen = row.barbermen || biz.barbermen;
+      biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
+      if (row.knowledge) biz.knowledge = row.knowledge;
+      if (row.scenarios) biz.scenarios = row.scenarios;
     }
-    biz.name = row.name || biz.name;
-    biz.type = row.type || biz.type;
-    biz.icon = row.icon || biz.icon;
-    biz.agentName = row.agent_name || biz.agentName;
-    biz.goal = row.goal || biz.goal;
-    biz.responseDelay = row.response_delay || biz.responseDelay;
-    biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
-    biz.kasir_number = row.kasir_number || biz.kasir_number;
-    biz.manager_number = row.manager_number || biz.manager_number;
-    biz.kasir_label = row.kasir_label || biz.kasir_label;
-    biz.staff_label = row.staff_label || biz.staff_label;
-    biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
-    biz.kasir_call_start = row.kasir_call_start || biz.kasir_call_start;
-    biz.kasir_call_end = row.kasir_call_end || biz.kasir_call_end;
-    biz.notif_categories = row.notif_categories || biz.notif_categories;
-    biz.barbermen = row.barbermen || biz.barbermen;
-    biz.barberman_contacts = row.barberman_contacts || biz.barberman_contacts;
-    if (row.knowledge) biz.knowledge = row.knowledge;
-    if (row.scenarios) biz.scenarios = row.scenarios;
   });
   return true;
 }
@@ -1768,7 +1695,7 @@ function useScenario(t) { document.getElementById('chatInput').value = t; sendMs
 function addBusiness() {
   const name = prompt('Nama bisnis baru:'); if (!name) return;
   const id = 'biz_' + Date.now();
-  const newBiz = {id, name, type:'Bisnis baru', icon:'🏢', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}};
+  const newBiz = {id, name, type:'Bisnis baru', icon:'&#127970;', agentName:'Asisten', goal:'convert', responseDelay:'random', fonnte_token:'', kasir_number:'', knowledge:'Isi informasi bisnis di panel konfigurasi.', scenarios:['Apa yang ditawarkan?','Berapa harganya?'], stats:{conv:0,answered:0,leads:0}};
   BUSINESSES.push(newBiz);
   saveBiz(); renderBizList(); selectBiz(id);
   saveBusinessToDB(newBiz).then(function() { console.log('Bisnis baru tersimpan ke Supabase:', id); });
