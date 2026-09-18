@@ -1249,7 +1249,26 @@ async function loadBusinessesFromDB() {
   const data = await sbFetch("businesses?select=*");
   if (!data || !data.length) return false;
   data.forEach(row => {
-    const biz = BUSINESSES.find(b => b.id === row.id);
+    let biz = BUSINESSES.find(b => b.id === row.id);
+    if (!biz) {
+      // Bisnis baru yang dibuat lewat dashboard (bukan salah satu dari 3 hardcode awal) —
+      // tanpa ini, bisnis ini akan hilang dari sidebar setiap kali halaman di-refresh.
+      biz = {
+        id: row.id,
+        name: row.name || 'Bisnis Baru',
+        type: row.type || '',
+        icon: row.icon || '🏢',
+        agentName: row.agent_name || 'AI',
+        goal: row.goal || 'convert',
+        responseDelay: row.response_delay || 'random',
+        fonnte_token: row.fonnte_token || '',
+        kasir_number: row.kasir_number || '',
+        knowledge: row.knowledge || '',
+        scenarios: [],
+        stats: {conv:0,answered:0,leads:0}
+      };
+      BUSINESSES.push(biz);
+    }
     if (biz) {
       biz.name = row.name || biz.name;
       biz.type = row.type || biz.type;
