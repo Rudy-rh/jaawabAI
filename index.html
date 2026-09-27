@@ -246,7 +246,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px"><span id="kasirLabelText">WA Kasir</span> (juga dipakai untuk nomor ditelepon) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Admin, CS)" onclick="renameKasirLabel()">&#9998;</button></div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
-          <div class="cfg-field"><div class="cfg-label">Catatan Internal (Manager)</div><textarea class="cfg-input" id="cfgCatatanInternal" rows="6" placeholder="Panduan/catatan pribadi buat manager, misal contoh perintah chat untuk ubah jadwal barberman. Field ini HANYA tersimpan di dashboard, TIDAK pernah dikirim ke AI/pelanggan."></textarea></div>
+          <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px">Catatan Internal (Manager) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Buka editor layar lebar" onclick="openCatatanInternalEditor()">&#9998;</button></div><div class="notif-field-preview" id="catatanInternalPreview" onclick="openCatatanInternalEditor()">(kosong — klik untuk isi)</div></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Murni catatan pribadi (misal panduan perintah chat ke bot) — tidak ikut jadi pengetahuan AI dan tidak pernah dilihat pelanggan.</div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
@@ -334,6 +334,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="editor-foot">
       <button class="editor-cancel" onclick="closeNotifEditor()">Batal</button>
       <button class="editor-save" onclick="saveNotifEditor()">&#x2713; Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- Catatan Internal (Manager) Editor Modal -->
+<div class="editor-modal" id="catatanInternalModal">
+  <div class="editor-box">
+    <div class="editor-head">
+      <div class="editor-title">Catatan Internal (Manager)</div>
+      <button class="editor-close" onclick="closeCatatanInternalEditor()">&#x2715;</button>
+    </div>
+    <textarea class="editor-textarea" id="catatanInternalTextarea" placeholder="Catatan/panduan pribadi buat pengelola bisnis ini — misal contoh perintah chat internal, SOP, atau pengingat lain. Field ini HANYA tersimpan di dashboard, TIDAK pernah dikirim ke AI/pelanggan."></textarea>
+    <div class="editor-foot">
+      <button class="editor-cancel" onclick="closeCatatanInternalEditor()">Batal</button>
+      <button class="editor-save" onclick="saveCatatanInternalEditor()">&#x2713; Simpan</button>
     </div>
   </div>
 </div>
@@ -440,7 +454,7 @@ function loadCfgForm() {
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
   document.getElementById('cfgManager').value = currentBiz.manager_number || '';
-  document.getElementById('cfgCatatanInternal').value = currentBiz.catatan_internal || '';
+  renderCatatanInternalPreview();
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
@@ -467,7 +481,6 @@ function saveConfig() {
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
   currentBiz.manager_number = document.getElementById('cfgManager').value;
-  currentBiz.catatan_internal = document.getElementById('cfgCatatanInternal').value;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
@@ -1541,6 +1554,33 @@ function saveNotifEditor() {
   currentBiz.notif_categories[_notifEditIdx][_notifEditField] = document.getElementById('notifEditorTextarea').value;
   closeNotifEditor();
   renderNotifCategories();
+}
+
+// ==================== CATATAN INTERNAL (MANAGER) — cuma tersimpan di dashboard, TIDAK dikirim ke AI ====================
+function renderCatatanInternalPreview() {
+  if (!currentBiz) return;
+  const el = document.getElementById('catatanInternalPreview');
+  if (!el) return;
+  const val = currentBiz.catatan_internal || '';
+  el.textContent = val ? truncatePreview(val) : '(kosong — klik untuk isi)';
+  el.classList.toggle('empty', !val);
+}
+
+function openCatatanInternalEditor() {
+  if (!currentBiz) return;
+  document.getElementById('catatanInternalTextarea').value = currentBiz.catatan_internal || '';
+  document.getElementById('catatanInternalModal').classList.add('open');
+}
+
+function closeCatatanInternalEditor() {
+  document.getElementById('catatanInternalModal').classList.remove('open');
+}
+
+function saveCatatanInternalEditor() {
+  if (!currentBiz) return;
+  currentBiz.catatan_internal = document.getElementById('catatanInternalTextarea').value;
+  closeCatatanInternalEditor();
+  renderCatatanInternalPreview();
 }
 
 // ==================== DAFTAR BARBERMAN (dinamis) ====================
