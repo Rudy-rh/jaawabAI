@@ -247,6 +247,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px">Nomor Device Fonnte <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('Nomor WhatsApp yang terhubung ke device Fonnte ini (yang menerima chat pelanggan). WAJIB diisi — tanpa ini, pesan yang masuk tidak akan dikenali sistem dan tidak akan dibalas sama sekali.')">&#9432;</button></div><input class="cfg-input" id="cfgDeviceNumber" placeholder="contoh: 81247911334 atau 6285111367547"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">PENTING: isi PERSIS sesuai nilai "device" yang benar-benar dikirim Fonnte — beda device bisa beda format (ada yang pakai 62 di depan, ada yang tidak), jangan ditebak/disamakan manual. Cara cek nilai pastinya: kirim 1 pesan test ke nomor ini, lalu buka Supabase &rarr; Edge Functions &rarr; webhook &rarr; Logs, cari baris "Payload masuk dari Fonnte" dan lihat field "device" di situ.</div>
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px"><span id="kasirLabelText">WA Kasir</span> (juga dipakai untuk nomor ditelepon) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Admin, CS)" onclick="renameKasirLabel()">&#9998;</button></div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
+          <div class="cfg-field"><div class="cfg-label">Kalau Pelanggan Kirim Lampiran yang Tidak Bisa Dibaca Sistem</div>
+            <select class="cfg-select" id="cfgMediaFallback">
+              <option value="telepon">Minta Nama+HP, nanti ditelepon balik untuk lihat lampirannya</option>
+              <option value="kb">Proses seperti pesan teks biasa mengikuti Pengetahuan Bisnis/KB (minta pelanggan jelaskan via teks)</option>
+            </select>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Paket Fonnte "Text Only" tidak mengirim isi foto/video/dokumen sama sekali ke sistem (bukan soal teknis biasa) — jadi AI TIDAK PERNAH benar-benar bisa "melihat" lampiran itu di kedua opsi. Bedanya cuma responnya: opsi pertama arahkan ke telepon balik, opsi kedua serahkan ke AI ikuti aturan di KB (misal Kebijakan Komplain) sambil minta pelanggan jelaskan detailnya lewat teks.</div>
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
@@ -440,6 +447,7 @@ function loadCfgForm() {
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
   document.getElementById('cfgDeviceNumber').value = currentBiz.device_number || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
+  document.getElementById('cfgMediaFallback').value = currentBiz.media_fallback_mode || 'telepon';
   document.getElementById('cfgManager').value = currentBiz.manager_number || '';
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
@@ -467,6 +475,7 @@ function saveConfig() {
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
   currentBiz.device_number = document.getElementById('cfgDeviceNumber').value.replace(/\D/g, '');
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
+  currentBiz.media_fallback_mode = document.getElementById('cfgMediaFallback').value;
   currentBiz.manager_number = document.getElementById('cfgManager').value;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
@@ -1283,6 +1292,7 @@ async function loadBusinessesFromDB() {
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
       biz.device_number = row.device_number || biz.device_number;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
+      biz.media_fallback_mode = row.media_fallback_mode || biz.media_fallback_mode;
       biz.manager_number = row.manager_number || biz.manager_number;
       biz.kasir_label = row.kasir_label || biz.kasir_label;
       biz.staff_label = row.staff_label || biz.staff_label;
@@ -1314,6 +1324,7 @@ async function saveBusinessToDB(biz) {
       fonnte_token: biz.fonnte_token,
       device_number: biz.device_number,
       kasir_number: biz.kasir_number,
+      media_fallback_mode: biz.media_fallback_mode,
       manager_number: biz.manager_number,
       kasir_label: biz.kasir_label,
       staff_label: biz.staff_label,
