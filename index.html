@@ -281,6 +281,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             </select>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Paket Fonnte "Text Only" tidak mengirim isi foto/video/dokumen sama sekali ke sistem (bukan soal teknis biasa) — jadi AI TIDAK PERNAH benar-benar bisa "melihat" lampiran itu di kedua opsi. Bedanya cuma responnya: opsi pertama arahkan ke telepon balik, opsi kedua serahkan ke AI ikuti aturan di KB (misal Kebijakan Komplain) sambil minta pelanggan jelaskan detailnya lewat teks.</div>
+          <div class="cfg-field" style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <input type="checkbox" id="cfgOptinEnabled" style="width:auto;margin:0">
+            <label for="cfgOptinEnabled" style="font-size:12px;cursor:pointer">Tawarkan opt-in nomor WA (setelah booking/komplain selesai ditangani)</label>
+          </div>
+          <div class="cfg-field"><div class="cfg-label">Kalimat Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Biar [Nama Agent] bisa kabari kakak kalau ada info penting dari kami nanti, boleh kami simpan nomor ini ya?&quot;"></textarea></div>
+          <div class="cfg-field"><div class="cfg-label">Kalimat Terima Kasih setelah Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinThanksMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Terima kasih kak, sudah diizinkan. Kalau nanti ada info penting dari [Nama Bisnis], kami kabari lewat nomor ini ya.&quot;"></textarea></div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau diaktifkan, AI akan menanyakan ini SEKALI SAJA per pelanggan (tidak diulang tiap booking/komplain), persis setelah booking atau komplain pelanggan tersebut selesai ditangani — bukan di awal obrolan. Begitu pelanggan jawab "boleh/iya/ok" dsb, status otomatis tercatat di tabel <code>customer_optin</code> DAN AI otomatis membalas kalimat terima kasih di atas SEKALI SAJA (tidak diulang lagi tiap booking berikutnya) — supaya pelanggan sendiri ingat kelak dia pernah setuju dihubungi, biar tidak kaget saat dapat info/blast beberapa bulan ke depan.</div>
+
+          <div class="cfg-sec-title" style="margin-top:8px;display:flex;align-items:center;gap:4px">Blast / Broadcast (ke nomor yang sudah opt-in) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('TIDAK ADA yang jalan otomatis sendiri tanpa diklik. Admin WAJIB klik \'Mulai Kirim\' setiap kali mau broadcast — baik pesan baru ATAU pesan yang persis sama diulang lagi nanti.\n\nSetelah diklik, pesan dikirim BERTAHAP & ACAK sepanjang 24 jam (bukan sekaligus) ke pelanggan yang statusnya opt-in, supaya tidak memicu deteksi anti-spam WhatsApp. Tiap pelanggan cuma dikirimi 1x untuk sesi itu.\n\nSelama sesi masih berjalan, ada tombol \'Batalkan Blast\' kalau mau dihentikan di tengah jalan (sisa pelanggan yang belum kebagian tidak akan dikirimi lagi). Dashboard juga menampilkan perkiraan kasar berapa hari sesi ini akan selesai, dihitung dari sisa pelanggan dibagi limit harian.\n\nBegitu semua pelanggan halal di sesi itu sudah kebagian, sesi otomatis berhenti sendiri (tidak ada sesi baru yang dibuat otomatis) — menunggu klik \'Mulai Kirim\' berikutnya dari admin.')">&#9432;</button></div>
+          <div class="cfg-field"><div class="cfg-label">Pesan Blast</div><textarea class="cfg-input" id="cfgBlastMessage" style="min-height:70px" placeholder="Isi pesan promo/pengumuman yang mau dikirim ke pelanggan yang sudah opt-in..."></textarea></div>
+          <div class="cfg-field"><div class="cfg-label">Jumlah Nomor Dikirim per 24 Jam</div><input class="cfg-input" type="number" min="0" id="cfgBlastDailyLimit" placeholder="misal: 20"></div>
+          <div id="blastStatusBox" style="font-size:11px;color:var(--muted);margin-bottom:8px">Memuat status blast...</div>
+          <div style="display:flex;gap:8px">
+            <button class="add-btn" style="flex:1" onclick="startBlast()">&#128640; Mulai Kirim</button>
+            <button class="add-btn" id="blastCancelBtn" style="flex:1;display:none;background:var(--danger,#c0392b);color:#fff" onclick="cancelBlast()">&#10060; Batalkan Blast</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Klik "Mulai Kirim" memicu sesi broadcast baru — WAJIB dilakukan manual tiap kali (lihat ikon info &#9432; di atas untuk detail). Hanya mengirim ke nomor yang statusnya "opted_in" di tabel <code>customer_optin</code>, butuh cron terjadwal di Supabase (lihat <code>migrasi_blast_sesi_manual.sql</code>) supaya pengiriman bertahapnya benar-benar jalan tanpa dashboard ini perlu dibiarkan terbuka.</div>
+
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
@@ -475,6 +493,12 @@ function loadCfgForm() {
   document.getElementById('cfgDeviceNumber').value = currentBiz.device_number || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
   document.getElementById('cfgMediaFallback').value = currentBiz.media_fallback_mode || 'telepon';
+  document.getElementById('cfgOptinEnabled').checked = !!currentBiz.optin_enabled;
+  document.getElementById('cfgOptinMessage').value = currentBiz.optin_message || '';
+  document.getElementById('cfgOptinThanksMessage').value = currentBiz.optin_thanks_message || '';
+  document.getElementById('cfgBlastMessage').value = currentBiz.blast_message || '';
+  document.getElementById('cfgBlastDailyLimit').value = (currentBiz.blast_daily_limit != null) ? currentBiz.blast_daily_limit : 0;
+  refreshBlastStatus();
   document.getElementById('cfgManager').value = currentBiz.manager_number || '';
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
@@ -503,6 +527,12 @@ function saveConfig() {
   currentBiz.device_number = document.getElementById('cfgDeviceNumber').value.replace(/\D/g, '');
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
   currentBiz.media_fallback_mode = document.getElementById('cfgMediaFallback').value;
+  currentBiz.optin_enabled = document.getElementById('cfgOptinEnabled').checked;
+  currentBiz.optin_message = document.getElementById('cfgOptinMessage').value;
+  currentBiz.optin_thanks_message = document.getElementById('cfgOptinThanksMessage').value;
+  currentBiz.blast_message = document.getElementById('cfgBlastMessage').value;
+  currentBiz.blast_daily_limit = parseInt(document.getElementById('cfgBlastDailyLimit').value, 10);
+  if (isNaN(currentBiz.blast_daily_limit)) currentBiz.blast_daily_limit = 0;
   currentBiz.manager_number = document.getElementById('cfgManager').value;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
@@ -1162,6 +1192,83 @@ function showTyping() {
 
 function removeTyping() { document.getElementById('typing')?.remove(); }
 
+// Tanya ke webhook (action blast_status) status sesi blast business yang sedang dibuka di
+// dashboard: kalau ada sesi 'active' tampilkan progresnya, kalau tidak ada tampilkan preview
+// "kalau diklik Mulai Kirim sekarang akan kena berapa pelanggan".
+async function refreshBlastStatus() {
+  if (!currentBiz) return;
+  const elBiz = currentBiz;
+  const box = document.getElementById('blastStatusBox');
+  if (box) box.textContent = 'Memuat status blast...';
+  try {
+    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'blast_status', business_id: elBiz.id })
+    });
+    const d = await res.json();
+    if (!box || currentBiz !== elBiz) return;
+    const cancelBtn = document.getElementById('blastCancelBtn');
+    if (d.active) {
+      const etaText = (d.estimated_days_left != null)
+        ? (d.estimated_days_left <= 0 ? ' Perkiraan selesai: sebentar lagi.' : ' Perkiraan selesai: ~' + d.estimated_days_left + ' hari lagi (kasar, bisa lebih cepat/lambat).')
+        : '';
+      box.innerHTML = '🟢 Sesi AKTIF — sudah terkirim <b>' + d.sent_count + '</b>, sisa menunggu giliran (acak dalam 24 jam): <b>' + d.remaining_count + '</b>. Limit harian: ' + d.daily_limit + '/24 jam.' + etaText;
+      if (cancelBtn) cancelBtn.style.display = '';
+    } else {
+      box.innerHTML = 'Tidak ada sesi aktif. Kalau klik "Mulai Kirim" sekarang: akan dikirim ke <b>' + d.eligible_for_new_session + '</b> pelanggan halal.';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Gagal ambil status blast:', e);
+    if (box) box.textContent = 'Gagal memuat status blast (cek koneksi/console).';
+  }
+}
+
+// Dipanggil tombol "Batalkan Blast" — hentikan sesi aktif SEKARANG. Pelanggan yang belum
+// kebagian untuk sesi ini tidak akan dikirimi apa-apa lagi (kecuali admin mulai sesi baru nanti).
+async function cancelBlast() {
+  if (!currentBiz) return;
+  if (!confirm('Batalkan sesi blast yang sedang berjalan? Pelanggan yang belum kebagian TIDAK akan dikirimi pesan ini lagi (kecuali kamu klik "Mulai Kirim" lagi nanti).')) return;
+  try {
+    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'blast_cancel', business_id: currentBiz.id })
+    });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('Sesi blast dibatalkan.');
+    refreshBlastStatus();
+  } catch (e) {
+    alert('Gagal membatalkan blast: ' + e.message);
+  }
+}
+
+// Dipanggil tombol "Mulai Kirim" — admin WAJIB klik ini setiap kali mau broadcast (pesan baru
+// ATAU pesan yang sama diulang). Tidak ada jalur lain yang bisa memicu sesi blast baru.
+async function startBlast() {
+  if (!currentBiz) return;
+  const msg = (document.getElementById('cfgBlastMessage').value || '').trim();
+  const limit = parseInt(document.getElementById('cfgBlastDailyLimit').value, 10) || 0;
+  if (!msg) { alert('Isi dulu "Pesan Blast"-nya.'); return; }
+  if (limit <= 0) { alert('Isi dulu "Jumlah Nomor Dikirim per 24 Jam" (harus lebih dari 0).'); return; }
+  if (!confirm('Mulai kirim pesan ini ke semua pelanggan yang sudah opt-in? Pengiriman akan bertahap & acak dalam 24 jam (bukan sekaligus), berjalan otomatis lewat cron. Kalau masih ada sesi blast lain yang sedang berjalan, sesi itu akan dihentikan & digantikan sesi ini.')) return;
+  try {
+    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'blast_start', business_id: currentBiz.id, message: msg, daily_limit: limit })
+    });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    alert('Sesi blast dimulai! Akan terkirim bertahap ke ' + d.eligible_count + ' pelanggan dalam 24 jam ke depan (acak, bukan sekaligus).');
+    refreshBlastStatus();
+  } catch (e) {
+    alert('Gagal memulai blast: ' + e.message);
+  }
+}
+
 async function sendMsg() {
   const inp = document.getElementById('chatInput');
   const text = inp.value.trim();
@@ -1363,6 +1470,11 @@ async function loadBusinessesFromDB() {
       biz.device_number = row.device_number || biz.device_number;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
       biz.media_fallback_mode = row.media_fallback_mode || biz.media_fallback_mode;
+      biz.optin_enabled = (row.optin_enabled != null) ? row.optin_enabled : biz.optin_enabled;
+      biz.optin_message = (row.optin_message != null) ? row.optin_message : biz.optin_message;
+      biz.optin_thanks_message = (row.optin_thanks_message != null) ? row.optin_thanks_message : biz.optin_thanks_message;
+      biz.blast_message = (row.blast_message != null) ? row.blast_message : biz.blast_message;
+      biz.blast_daily_limit = (row.blast_daily_limit != null) ? row.blast_daily_limit : biz.blast_daily_limit;
       biz.manager_number = row.manager_number || biz.manager_number;
       biz.kasir_label = row.kasir_label || biz.kasir_label;
       biz.staff_label = row.staff_label || biz.staff_label;
@@ -1395,6 +1507,11 @@ async function saveBusinessToDB(biz) {
       device_number: biz.device_number,
       kasir_number: biz.kasir_number,
       media_fallback_mode: biz.media_fallback_mode,
+      optin_enabled: biz.optin_enabled || false,
+      optin_message: biz.optin_message || '',
+      optin_thanks_message: biz.optin_thanks_message || '',
+      blast_message: biz.blast_message || '',
+      blast_daily_limit: biz.blast_daily_limit || 0,
       manager_number: biz.manager_number,
       kasir_label: biz.kasir_label,
       staff_label: biz.staff_label,
