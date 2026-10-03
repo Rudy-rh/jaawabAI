@@ -95,6 +95,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .empty-desc{font-size:13px;max-width:280px;line-height:1.5}
 .cfg-panel{width:280px;min-width:280px;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:12px}
 .cfg-sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+.cfg-group-title{font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.cfg-group-title.first{padding-top:0;border-top:none}
 .cfg-field{margin-bottom:8px}
 .cfg-label{font-size:11px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
 .cfg-input,.cfg-select{width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
@@ -214,7 +216,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
       <div class="cfg-panel" id="cfgPanel" style="display:none">
         <div>
-          <div class="cfg-sec-title">Identitas Bisnis</div>
+          <div class="cfg-group-title first">&#127970; Identitas Bisnis</div>
           <div class="cfg-field"><div class="cfg-label">Nama bisnis</div><input class="cfg-input" id="cfgName"></div>
           <div class="cfg-field"><div class="cfg-label">Jenis bisnis</div><input class="cfg-input" id="cfgType"></div>
           <div class="cfg-field"><div class="cfg-label">Nama AI Agent</div><input class="cfg-input" id="cfgAgent"></div>
@@ -228,7 +230,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
-          <div class="cfg-sec-title">Knowledge Base</div>
+          <div class="cfg-group-title">&#128218; Pengetahuan Bisnis (Knowledge Base)</div>
           <div class="kb-tabs">
             <button class="kb-tab active" onclick="switchKbTab('structured',this)">&#128203; Terstruktur</button>
             <button class="kb-tab" onclick="switchKbTab('raw',this)">&#128221; Teks Bebas</button>
@@ -257,7 +259,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
-          <div class="cfg-sec-title">Kecepatan Respon</div>
+          <div class="cfg-group-title">&#9889; Kecepatan Respon</div>
           <select class="cfg-select" id="cfgDelay" onchange="updateDelayPreview()">
             <option value="instant">Langsung (instan)</option>
             <option value="3">3 detik</option>
@@ -269,7 +271,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="delay-preview" id="delayPreview"></div>
         </div>
         <div>
-          <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
+          <div class="cfg-group-title">&#128241; Koneksi WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px">Nomor Device Fonnte <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('Nomor WhatsApp yang terhubung ke device Fonnte ini (yang menerima chat pelanggan). WAJIB diisi — tanpa ini, pesan yang masuk tidak akan dikenali sistem dan tidak akan dibalas sama sekali.')">&#9432;</button></div><input class="cfg-input" id="cfgDeviceNumber" placeholder="contoh: 81247911334 atau 6285111367547"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">PENTING: isi PERSIS sesuai nilai "device" yang benar-benar dikirim Fonnte — beda device bisa beda format (ada yang pakai 62 di depan, ada yang tidak), jangan ditebak/disamakan manual. Cara cek nilai pastinya: kirim 1 pesan test ke nomor ini, lalu buka Supabase &rarr; Edge Functions &rarr; webhook &rarr; Logs, cari baris "Payload masuk dari Fonnte" dan lihat field "device" di situ.</div>
@@ -281,6 +283,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             </select>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Paket Fonnte "Text Only" tidak mengirim isi foto/video/dokumen sama sekali ke sistem (bukan soal teknis biasa) — jadi AI TIDAK PERNAH benar-benar bisa "melihat" lampiran itu di kedua opsi. Bedanya cuma responnya: opsi pertama arahkan ke telepon balik, opsi kedua serahkan ke AI ikuti aturan di KB (misal Kebijakan Komplain) sambil minta pelanggan jelaskan detailnya lewat teks.</div>
+        </div>
+        <div>
+          <div class="cfg-group-title">&#9989; Opt-in Pelanggan</div>
           <div class="cfg-field" style="display:flex;align-items:center;gap:6px;margin-top:6px">
             <input type="checkbox" id="cfgOptinEnabled" style="width:auto;margin:0">
             <label for="cfgOptinEnabled" style="font-size:12px;cursor:pointer">Tawarkan opt-in nomor WA (setelah booking/komplain selesai ditangani)</label>
@@ -288,8 +293,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-field"><div class="cfg-label">Kalimat Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Biar [Nama Agent] bisa kabari kakak kalau ada info penting dari kami nanti, boleh kami simpan nomor ini ya?&quot;"></textarea></div>
           <div class="cfg-field"><div class="cfg-label">Kalimat Terima Kasih setelah Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinThanksMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Terima kasih kak, sudah diizinkan. Kalau nanti ada info penting dari [Nama Bisnis], kami kabari lewat nomor ini ya.&quot;"></textarea></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau diaktifkan, AI akan menanyakan ini SEKALI SAJA per pelanggan (tidak diulang tiap booking/komplain), persis setelah booking atau komplain pelanggan tersebut selesai ditangani — bukan di awal obrolan. Begitu pelanggan jawab "boleh/iya/ok" dsb, status otomatis tercatat di tabel <code>customer_optin</code> DAN AI otomatis membalas kalimat terima kasih di atas SEKALI SAJA (tidak diulang lagi tiap booking berikutnya) — supaya pelanggan sendiri ingat kelak dia pernah setuju dihubungi, biar tidak kaget saat dapat info/blast beberapa bulan ke depan.</div>
-
-          <div class="cfg-sec-title" style="margin-top:8px;display:flex;align-items:center;gap:4px">Blast / Broadcast (ke nomor yang sudah opt-in) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('TIDAK ADA yang jalan otomatis sendiri tanpa diklik. Admin WAJIB klik \'Mulai Kirim\' setiap kali mau broadcast — baik pesan baru ATAU pesan yang persis sama diulang lagi nanti.\n\nSetelah diklik, pesan dikirim BERTAHAP & ACAK sepanjang 24 jam (bukan sekaligus) ke pelanggan yang statusnya opt-in, supaya tidak memicu deteksi anti-spam WhatsApp. Tiap pelanggan cuma dikirimi 1x untuk sesi itu.\n\nSelama sesi masih berjalan, ada tombol \'Batalkan Blast\' kalau mau dihentikan di tengah jalan (sisa pelanggan yang belum kebagian tidak akan dikirimi lagi). Dashboard juga menampilkan perkiraan kasar berapa hari sesi ini akan selesai, dihitung dari sisa pelanggan dibagi limit harian.\n\nBegitu semua pelanggan halal di sesi itu sudah kebagian, sesi otomatis berhenti sendiri (tidak ada sesi baru yang dibuat otomatis) — menunggu klik \'Mulai Kirim\' berikutnya dari admin.')">&#9432;</button></div>
+        </div>
+        <div>
+          <div class="cfg-group-title" style="display:flex;align-items:center;gap:4px">&#128226; Blast / Broadcast <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('TIDAK ADA yang jalan otomatis sendiri tanpa diklik. Admin WAJIB klik \'Mulai Kirim\' setiap kali mau broadcast — baik pesan baru ATAU pesan yang persis sama diulang lagi nanti.\n\nSetelah diklik, pesan dikirim BERTAHAP & ACAK sepanjang 24 jam (bukan sekaligus) ke pelanggan yang statusnya opt-in, supaya tidak memicu deteksi anti-spam WhatsApp. Tiap pelanggan cuma dikirimi 1x untuk sesi itu.\n\nSelama sesi masih berjalan, ada tombol \'Batalkan Blast\' kalau mau dihentikan di tengah jalan (sisa pelanggan yang belum kebagian tidak akan dikirimi lagi). Dashboard juga menampilkan perkiraan kasar berapa hari sesi ini akan selesai, dihitung dari sisa pelanggan dibagi limit harian.\n\nBegitu semua pelanggan halal di sesi itu sudah kebagian, sesi otomatis berhenti sendiri (tidak ada sesi baru yang dibuat otomatis) — menunggu klik \'Mulai Kirim\' berikutnya dari admin.')">&#9432;</button></div>
           <div class="cfg-field"><div class="cfg-label">Pesan Blast</div><textarea class="cfg-input" id="cfgBlastMessage" style="min-height:70px" placeholder="Isi pesan promo/pengumuman yang mau dikirim ke pelanggan yang sudah opt-in..."></textarea></div>
           <div class="cfg-field"><div class="cfg-label">Jumlah Nomor Dikirim per 24 Jam</div><input class="cfg-input" type="number" min="0" id="cfgBlastDailyLimit" placeholder="misal: 20"></div>
           <div id="blastStatusBox" style="font-size:11px;color:var(--muted);margin-bottom:8px">Memuat status blast...</div>
@@ -298,7 +304,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <button class="add-btn" id="blastCancelBtn" style="flex:1;display:none;background:var(--danger,#c0392b);color:#fff" onclick="cancelBlast()">&#10060; Batalkan Blast</button>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Klik "Mulai Kirim" memicu sesi broadcast baru — WAJIB dilakukan manual tiap kali (lihat ikon info &#9432; di atas untuk detail). Hanya mengirim ke nomor yang statusnya "opted_in" di tabel <code>customer_optin</code>, butuh cron terjadwal di Supabase (lihat <code>migrasi_blast_sesi_manual.sql</code>) supaya pengiriman bertahapnya benar-benar jalan tanpa dashboard ini perlu dibiarkan terbuka.</div>
-
+        </div>
+        <div>
+          <div class="cfg-group-title">&#128276; Manager &amp; Notifikasi</div>
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
@@ -319,13 +327,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         </div>
         <button class="save-btn" onclick="saveConfig()">Simpan &amp; Terapkan</button>
         <div>
-          <div class="cfg-sec-title">Statistik</div>
+          <div class="cfg-group-title">&#128202; Statistik</div>
           <div class="stat-row"><span>Percakapan</span><span class="stat-val" id="statConv">0</span></div>
           <div class="stat-row"><span>Dijawab</span><span class="stat-val" id="statAns">0</span></div>
           <div class="stat-row"><span>Lead</span><span class="stat-val" id="statLead">0</span></div>
         </div>
         <div>
-          <div class="cfg-sec-title">Uji Skenario</div>
+          <div class="cfg-group-title">&#129514; Uji Skenario</div>
           <div id="quickReplies"></div>
         </div>
       </div>
@@ -479,7 +487,10 @@ function toggleCfg() {
   cfgOpen = !cfgOpen;
   document.getElementById('cfgPanel').style.display = cfgOpen ? 'flex' : 'none';
   document.getElementById('ws').className = cfgOpen ? 'workspace cfg' : 'workspace';
-  if (cfgOpen) loadKbForBiz(currentBiz.id);
+  if (cfgOpen) {
+    loadKbForBiz(currentBiz.id);
+    refreshBlastStatus(); // supaya status "terkirim X, sisa Y" selalu update tiap kali panel dibuka
+  }
 }
 
 function loadCfgForm() {
