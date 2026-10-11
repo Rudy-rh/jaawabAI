@@ -705,17 +705,85 @@ function openAttachPreview(id) {
   closeAttachPreview();
   const ov = document.createElement('div');
   ov.id = 'attachPreviewOverlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:zoom-out';
-  ov.onclick = closeAttachPreview;
-  ov.innerHTML = '<img src="' + escAttach(item.image_url) + '" style="max-width:92vw;max-height:78vh;object-fit:contain;border-radius:8px;background:#fff" />'
-    + '<div style="margin-top:12px;max-width:90vw;text-align:center;color:#fff;font-size:14px;overflow-wrap:break-word"><b>' + escAttach(item.label) + '</b><br><span style="opacity:.8;font-size:12.5px">' + escAttach(item.description) + '</span></div>'
-    + '<div style="margin-top:8px;color:#fff;opacity:.6;font-size:12px">Klik di mana saja atau tekan Esc untuk menutup</div>';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;padding:12px;gap:8px';
+  const btn = 'style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:13px;cursor:pointer"';
+  ov.innerHTML =
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;color:#fff">'
+    +   '<button ' + btn + ' id="apZoomOut" title="Perkecil">&#8722;</button>'
+    +   '<span id="apZoomLabel" style="min-width:52px;text-align:center;font-size:13px">100%</span>'
+    +   '<button ' + btn + ' id="apZoomIn" title="Perbesar">+</button>'
+    +   '<button ' + btn + ' id="apFit">Muat layar</button>'
+    +   '<button ' + btn + ' id="apActual">Ukuran asli</button>'
+    +   '<a ' + btn + ' href="' + escAttach(item.image_url) + '" target="_blank" rel="noopener" style="text-decoration:none;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:13px">Buka di tab baru</a>'
+    +   '<button ' + btn + ' id="apClose" title="Tutup (Esc)">&#10005; Tutup</button>'
+    + '</div>'
+    + '<div id="apScroll" style="flex:1;min-height:0;width:100%;overflow:auto;display:flex;touch-action:pan-x pan-y pinch-zoom;cursor:zoom-in">'
+    +   '<img id="apImg" src="' + escAttach(item.image_url) + '" draggable="false" style="margin:auto;max-width:none;background:#fff;border-radius:6px;user-select:none;flex-shrink:0" />'
+    + '</div>'
+    + '<div style="color:#fff;text-align:center;max-width:90vw;overflow-wrap:break-word;font-size:14px"><b>' + escAttach(item.label) + '</b> <span style="opacity:.75;font-size:12.5px">&mdash; ' + escAttach(item.description) + '</span>'
+    +   '<div style="opacity:.55;font-size:11.5px;margin-top:2px">Klik gambar / scroll mouse untuk zoom &middot; geser untuk menggeser &middot; Esc untuk menutup</div></div>';
   document.body.appendChild(ov);
   document.addEventListener('keydown', attachEsc);
+
+  const sc = ov.querySelector('#apScroll'), img = ov.querySelector('#apImg'), lbl = ov.querySelector('#apZoomLabel');
+  let z = 1, fit = 1;
+  function calcFit() {
+    const nw = img.naturalWidth || 1, nh = img.naturalHeight || 1;
+    fit = Math.min(sc.clientWidth / nw, sc.clientHeight / nh);
+    if (!isFinite(fit) || fit <= 0) fit = 1;
+  }
+  function apply(newZ, cx, cy) {
+    newZ = Math.max(1, Math.min(8, newZ));
+    const r = img.getBoundingClientRect();
+    const relX = r.width ? (cx - r.left) / r.width : .5, relY = r.height ? (cy - r.top) / r.height : .5;
+    z = newZ;
+    img.style.width = (img.naturalWidth * fit * z) + 'px';
+    img.style.height = (img.naturalHeight * fit * z) + 'px';
+    const r2 = img.getBoundingClientRect();
+    sc.scrollLeft += (r2.left + relX * r2.width) - cx;
+    sc.scrollTop += (r2.top + relY * r2.height) - cy;
+    lbl.textContent = Math.round(z * fit * 100) + '%';
+    sc.style.cursor = z > 1 ? 'grab' : 'zoom-in';
+  }
+  function center() { const r = sc.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+  function init() { calcFit(); apply(1, center()[0], center()[1]); }
+  if (img.complete && img.naturalWidth) init(); else img.onload = init;
+  window.addEventListener('resize', attachPreviewResize);
+  ov._resizeFn = function() { calcFit(); apply(z, center()[0], center()[1]); };
+
+  ov.querySelector('#apZoomIn').onclick = function() { const c = center(); apply(z * 1.5, c[0], c[1]); };
+  ov.querySelector('#apZoomOut').onclick = function() { const c = center(); apply(z / 1.5, c[0], c[1]); };
+  ov.querySelector('#apFit').onclick = function() { const c = center(); apply(1, c[0], c[1]); };
+  ov.querySelector('#apActual').onclick = function() { const c = center(); apply(1 / fit, c[0], c[1]); };
+  ov.querySelector('#apClose').onclick = closeAttachPreview;
+  sc.addEventListener('wheel', function(e) { e.preventDefault(); apply(z * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY); }, { passive: false });
+
+  // klik = zoom bergantian, geser (drag) = pan; klik area gelap di luar gambar = tutup
+  let down = null, moved = false;
+  sc.addEventListener('pointerdown', function(e) { down = { x: e.clientX, y: e.clientY, sl: sc.scrollLeft, st: sc.scrollTop }; moved = false; });
+  sc.addEventListener('pointermove', function(e) {
+    if (!down) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+    if (moved && z > 1) { sc.scrollLeft = down.sl - dx; sc.scrollTop = down.st - dy; sc.style.cursor = 'grabbing'; }
+  });
+  function endDrag() { down = null; sc.style.cursor = z > 1 ? 'grab' : 'zoom-in'; }
+  sc.addEventListener('pointerup', function(e) {
+    const wasMoved = moved; endDrag();
+    if (wasMoved) return;
+    if (e.target === img) apply(z > 1 ? 1 : Math.max(2.5, 1 / fit), e.clientX, e.clientY);
+    else closeAttachPreview();
+  });
+  sc.addEventListener('pointerleave', endDrag);
+}
+function attachPreviewResize() {
+  const ov = document.getElementById('attachPreviewOverlay');
+  if (ov && ov._resizeFn) ov._resizeFn();
 }
 function closeAttachPreview() {
   const ov = document.getElementById('attachPreviewOverlay');
   if (ov) ov.remove();
+  window.removeEventListener('resize', attachPreviewResize);
   if (!document.getElementById('attachGalleryOverlay')) document.removeEventListener('keydown', attachEsc);
 }
 function attachEsc(e) {
