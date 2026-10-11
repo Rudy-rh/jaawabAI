@@ -618,22 +618,145 @@ async function loadAttachments(bizId) {
 function renderAttachments() {
   const bizId = currentBiz?.id;
   const el = document.getElementById('attachList');
-  if (!el) return;
-  const list = attachData[bizId] || [];
-  el.innerHTML = list.map(a => `
-    <div class="notif-cat-card" style="margin-bottom:8px">
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <img src="${escAttach(a.image_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
-        <div style="flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word">
-          <div style="font-weight:600;overflow-wrap:break-word;word-break:break-word">${escAttach(a.label)}</div>
-          <div style="font-size:12.5px;color:var(--text-dim,#9aa);overflow-wrap:break-word;word-break:break-word">${escAttach(a.description)}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-          <button class="kb-file-btn" style="padding:4px 8px" onclick="editAttachment('${escAttach(a.id)}')" title="Edit">&#9998;</button>
-          <button class="kb-file-btn" style="padding:4px 8px" onclick="deleteAttachment('${escAttach(a.id)}')" title="Hapus">&#128465;</button>
+  if (el) {
+    const list = attachData[bizId] || [];
+    if (!list.length) {
+      el.innerHTML = '<div class="kb-file-hint">Belum ada lampiran gambar.</div>';
+    } else {
+      const SHOW = 3;
+      const rows = list.slice(0, SHOW).map(a => `
+        <div class="notif-cat-card" style="margin-bottom:6px;padding:8px 10px;cursor:pointer" onclick="openAttachGallery()" title="Klik untuk lihat semua lampiran">
+          <div style="display:flex;gap:10px;align-items:center">
+            <img src="${escAttach(a.image_url)}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0" />
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escAttach(a.label)}</div>
+              <div style="font-size:12px;color:var(--text-dim,#9aa);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word">${escAttach(a.description)}</div>
+            </div>
+          </div>
+        </div>`).join('');
+      const more = list.length > SHOW ? ('<div class="kb-file-hint" style="margin:2px 0 6px">+ ' + (list.length - SHOW) + ' lampiran lainnya</div>') : '';
+      el.innerHTML = rows + more
+        + '<button class="kb-file-btn" style="margin-top:2px" onclick="openAttachGallery()">&#128444; Lihat semua &amp; kelola (' + list.length + ')</button>';
+    }
+  }
+  if (document.getElementById('attachGalleryOverlay')) renderAttachGallery();
+}
+
+// ---- Galeri lampiran (jendela terpisah): grid, cari, preview, edit, ganti, hapus ----
+function openAttachGallery() {
+  if (!currentBiz) return;
+  closeAttachGallery();
+  const ov = document.createElement('div');
+  ov.id = 'attachGalleryOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.onclick = function(e) { if (e.target === ov) closeAttachGallery(); };
+  ov.innerHTML = '<div style="background:var(--bg,#12141c);color:var(--text,#fff);border:1px solid var(--border,#333);border-radius:14px;width:min(1000px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden">'
+    + '<div style="display:flex;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border,#333);flex-wrap:wrap">'
+    +   '<div style="font-weight:700;font-size:15px;flex:1;min-width:160px">&#128247; Lampiran Gambar &mdash; ' + escAttach(currentBiz.name) + '</div>'
+    +   '<input id="attachSearch" type="text" placeholder="Cari nama / keterangan..." oninput="renderAttachGallery()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border,#333);background:var(--surface2,#1b1e2b);color:var(--text,#fff);font-size:13px;min-width:170px">'
+    +   '<label class="kb-file-btn" style="cursor:pointer">+ Tambah Lampiran<input type="file" accept="image/*" style="display:none" onchange="addAttachment(this)"></label>'
+    +   '<button class="kb-file-btn" onclick="closeAttachGallery()" title="Tutup (Esc)">&#10005;</button>'
+    + '</div>'
+    + '<div id="attachGalleryGrid" style="padding:16px;overflow-y:auto"></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', attachEsc);
+  renderAttachGallery();
+}
+
+function closeAttachGallery() {
+  const ov = document.getElementById('attachGalleryOverlay');
+  if (ov) ov.remove();
+  if (!document.getElementById('attachPreviewOverlay')) document.removeEventListener('keydown', attachEsc);
+}
+
+function renderAttachGallery() {
+  const grid = document.getElementById('attachGalleryGrid');
+  if (!grid) return;
+  const q = (document.getElementById('attachSearch')?.value || '').trim().toLowerCase();
+  const all = attachData[currentBiz?.id] || [];
+  const list = q ? all.filter(a => (String(a.label) + ' ' + String(a.description)).toLowerCase().includes(q)) : all;
+  if (!list.length) {
+    grid.innerHTML = '<div class="kb-file-hint">' + (all.length ? 'Tidak ada lampiran yang cocok dengan pencarian.' : 'Belum ada lampiran gambar.') + '</div>';
+    return;
+  }
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fill,minmax(210px,1fr))';
+  grid.style.gap = '14px';
+  grid.innerHTML = list.map(a => `
+    <div style="border:1px solid var(--border,#333);border-radius:10px;background:var(--surface,#171a26);overflow:hidden;display:flex;flex-direction:column">
+      <img src="${escAttach(a.image_url)}" onclick="openAttachPreview('${escAttach(a.id)}')" title="Klik untuk lihat gambar penuh" style="width:100%;aspect-ratio:4/3;object-fit:cover;cursor:zoom-in;background:#fff" />
+      <div style="padding:10px;flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+        <div style="font-weight:600;font-size:13px;overflow-wrap:break-word;word-break:break-word">${escAttach(a.label)}</div>
+        <div style="font-size:12px;color:var(--text-dim,#9aa);overflow-wrap:break-word;word-break:break-word;flex:1">${escAttach(a.description)}</div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="openAttachPreview('${escAttach(a.id)}')" title="Lihat gambar">&#128065;</button>
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="editAttachment('${escAttach(a.id)}')" title="Edit nama &amp; keterangan">&#9998;</button>
+          <label class="kb-file-btn" style="padding:4px 8px;cursor:pointer" title="Ganti gambar">&#128260;<input type="file" accept="image/*" style="display:none" onchange="replaceAttachmentImage('${escAttach(a.id)}', this)"></label>
+          <button class="kb-file-btn" style="padding:4px 8px;margin-left:auto" onclick="deleteAttachment('${escAttach(a.id)}')" title="Hapus">&#128465;</button>
         </div>
       </div>
-    </div>`).join('') || '<div class="kb-file-hint">Belum ada lampiran gambar.</div>';
+    </div>`).join('');
+}
+
+function openAttachPreview(id) {
+  const item = (attachData[currentBiz?.id] || []).find(a => a.id === id);
+  if (!item) return;
+  closeAttachPreview();
+  const ov = document.createElement('div');
+  ov.id = 'attachPreviewOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:zoom-out';
+  ov.onclick = closeAttachPreview;
+  ov.innerHTML = '<img src="' + escAttach(item.image_url) + '" style="max-width:92vw;max-height:78vh;object-fit:contain;border-radius:8px;background:#fff" />'
+    + '<div style="margin-top:12px;max-width:90vw;text-align:center;color:#fff;font-size:14px;overflow-wrap:break-word"><b>' + escAttach(item.label) + '</b><br><span style="opacity:.8;font-size:12.5px">' + escAttach(item.description) + '</span></div>'
+    + '<div style="margin-top:8px;color:#fff;opacity:.6;font-size:12px">Klik di mana saja atau tekan Esc untuk menutup</div>';
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', attachEsc);
+}
+function closeAttachPreview() {
+  const ov = document.getElementById('attachPreviewOverlay');
+  if (ov) ov.remove();
+  if (!document.getElementById('attachGalleryOverlay')) document.removeEventListener('keydown', attachEsc);
+}
+function attachEsc(e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('attachPreviewOverlay')) closeAttachPreview();
+  else closeAttachGallery();
+}
+
+async function replaceAttachmentImage(id, input) {
+  const file = input.files[0]; if (!file) return;
+  const bizId = currentBiz?.id;
+  const item = (attachData[bizId] || []).find(a => a.id === id);
+  if (!item) { input.value = ''; return; }
+  if (!confirm('Ganti gambar untuk "' + item.label + '" dengan file yang baru dipilih?\n(Nama & keterangan tetap sama.)')) { input.value = ''; return; }
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session ? session.access_token : SUPABASE_KEY;
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = bizId + '/' + Date.now() + '_' + String(item.label).replace(/[^a-zA-Z0-9_-]/g, '') + '.' + ext;
+    const uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/kb-attachments/' + path, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': file.type },
+      body: file
+    });
+    if (!uploadRes.ok) {
+      const detail = await uploadRes.text();
+      console.error('Ganti gambar gagal:', detail);
+      alert('Gagal upload gambar pengganti.\n\n' + detail);
+      input.value = ''; return;
+    }
+    const imageUrl = SUPABASE_URL + '/storage/v1/object/public/kb-attachments/' + path;
+    await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ image_url: imageUrl })
+    });
+    await loadAttachments(bizId);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+  input.value = '';
 }
 
 async function editAttachment(id) {
