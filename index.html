@@ -702,6 +702,10 @@ function renderAttachGallery() {
 function openAttachPreview(id) {
   const item = (attachData[currentBiz?.id] || []).find(a => a.id === id);
   if (!item) return;
+  showImagePreview(item);
+}
+function showImagePreview(item) {
+  if (!item || !item.image_url) return;
   closeAttachPreview();
   const ov = document.createElement('div');
   ov.id = 'attachPreviewOverlay';
@@ -720,7 +724,7 @@ function openAttachPreview(id) {
     + '<div id="apScroll" style="flex:1;min-height:0;width:100%;overflow:auto;display:flex;touch-action:pan-x pan-y pinch-zoom;cursor:zoom-in">'
     +   '<img id="apImg" src="' + escAttach(item.image_url) + '" draggable="false" style="margin:auto;max-width:none;background:#fff;border-radius:6px;user-select:none;flex-shrink:0" />'
     + '</div>'
-    + '<div style="color:#fff;text-align:center;max-width:90vw;overflow-wrap:break-word;font-size:14px"><b>' + escAttach(item.label) + '</b> <span style="opacity:.75;font-size:12.5px">&mdash; ' + escAttach(item.description) + '</span>'
+    + '<div style="color:#fff;text-align:center;max-width:90vw;overflow-wrap:break-word;font-size:14px"><b>' + escAttach(item.label) + '</b> <span style="opacity:.75;font-size:12.5px">' + (item.description ? '&mdash; ' + escAttach(item.description) : '') + '</span>'
     +   '<div style="opacity:.55;font-size:11.5px;margin-top:2px">Klik gambar / scroll mouse untuk zoom &middot; geser untuk menggeser &middot; Esc untuk menutup</div></div>';
   document.body.appendChild(ov);
   document.addEventListener('keydown', attachEsc);
@@ -1483,13 +1487,20 @@ function aiAvatarHtml() {
     : '<div class="avatar">🤖</div>';
 }
 
-function appendMsg(role, text) {
+let chatImages = []; // gambar lampiran yang tampil di chat preview (untuk klik-zoom)
+function appendMsg(role, text, images) {
   const msgs = document.getElementById('messages');
   const now = new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-  if (role === 'ai') div.innerHTML = `${aiAvatarHtml()}<div><div class="bubble">${safe}</div><div class="msg-time">${currentBiz?.agentName||'AI'} · ${now}</div></div>`;
+  // Gambar lampiran yang dipilih AI Agent (dikirim webhook di field "attachments") — klik untuk zoom
+  const imagesHtml = (images && images.length)
+    ? '<div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">' +
+      images.map(img => { chatImages.push(img); return '<img src="' + escAttach(img.image_url) + '" alt="' + escAttach(img.label || '') + '" onclick="showImagePreview(chatImages[' + (chatImages.length - 1) + '])" title="Klik untuk memperbesar" style="max-width:220px;border-radius:10px;display:block;cursor:zoom-in" />'; }).join('') +
+      '</div>'
+    : '';
+  if (role === 'ai') div.innerHTML = `${aiAvatarHtml()}<div><div class="bubble">${safe}${imagesHtml}</div><div class="msg-time">${currentBiz?.agentName||'AI'} · ${now}</div></div>`;
   else div.innerHTML = `<div class="avatar">👤</div><div><div class="bubble">${safe}</div><div class="msg-time">${now}</div></div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
@@ -1602,11 +1613,12 @@ async function sendMsg() {
     const d = await res.json();
     if (d.error) throw new Error(d.error);
     const reply = d.reply || 'Maaf, ada gangguan.';
+    const attachmentsToShow = Array.isArray(d.attachments) ? d.attachments : [];
 
     const delay = getDelay(reply.length);
     if (delay > 0) await new Promise(r => setTimeout(r, delay));
     removeTyping();
-    appendMsg('ai', reply);
+    appendMsg('ai', reply, attachmentsToShow);
     convHistory.push({role:'assistant', content:reply});
     if (currentBiz.stats) {
       currentBiz.stats.answered++;
