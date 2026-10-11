@@ -9,22 +9,6 @@
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#2a3050;--accent:#4f7fff;--accent2:#7c5cfc;--text:#e8eaf6;--muted:#7b82a0;--success:#2ecc71;--font:'Segoe UI',system-ui,sans-serif}
 body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 .app{display:grid;grid-template-columns:240px 1fr;height:100vh;overflow:hidden}
-.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-screen.hidden{display:none}
-.login-box{width:320px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px}
-.login-logo{font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
-.login-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
-.login-field{margin-bottom:12px}
-.login-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
-.login-field input{width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;outline:none}
-.login-field input:focus{border-color:var(--accent)}
-.login-btn{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:6px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px}
-.login-btn:disabled{opacity:.6;cursor:default}
-.login-error{font-size:11px;color:#ff6b6b;margin-top:10px;min-height:14px}
-.app.hidden{display:none}
-.logout-btn{font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;margin-top:8px}
-.logout-btn:hover{color:var(--text);border-color:var(--accent)}
-
 .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .logo-wrap{padding:16px;border-bottom:1px solid var(--border)}
 .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -95,8 +79,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .empty-desc{font-size:13px;max-width:280px;line-height:1.5}
 .cfg-panel{width:280px;min-width:280px;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:12px}
 .cfg-sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
-.cfg-group-title{font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
-.cfg-group-title.first{padding-top:0;border-top:none}
 .cfg-field{margin-bottom:8px}
 .cfg-label{font-size:11px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
 .cfg-input,.cfg-select{width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
@@ -110,14 +92,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .kb-tabs{display:flex;gap:3px;background:var(--bg);border-radius:7px;padding:3px;margin-bottom:8px}
 .kb-tab{flex:1;padding:5px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);font-family:var(--font);transition:all .15s;text-align:center}
 .kb-tab.active{background:var(--surface2);color:var(--text)}
-.kb-cat{border:1px solid var(--border);border-radius:7px;margin-bottom:6px;overflow:hidden;transition:opacity .15s,border-color .15s}
-.kb-cat.dragging{opacity:.4}
-.kb-cat.drag-over{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.kb-cat{border:1px solid var(--border);border-radius:7px;margin-bottom:6px;overflow:hidden}
 .kb-cat-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);cursor:pointer}
 .kb-cat-head:hover{background:var(--border)}
 .kb-cat-title{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
-.kb-drag-handle{cursor:grab;color:var(--muted);font-size:13px;letter-spacing:-2px;padding:0 2px;user-select:none}
-.kb-drag-handle:active{cursor:grabbing}
 .kb-cat-arrow{font-size:10px;color:var(--muted);transition:transform .2s}
 .kb-cat.open .kb-cat-arrow{transform:rotate(90deg)}
 .kb-cat-body{display:none;padding:8px;border-top:1px solid var(--border)}
@@ -160,22 +138,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .editor-save{padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
 .editor-cancel{padding:8px 14px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:var(--font)}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="login-screen" id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">JaawabAI</div>
-    <div class="login-sub">Masuk untuk mengelola dashboard</div>
-    <div class="login-field"><label>Email</label><input type="email" id="loginEmail" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()"></div>
-    <div class="login-field"><label>Password</label><input type="password" id="loginPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">Masuk</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-<div class="app hidden" id="appRoot">
+<div class="app">
   <aside class="sidebar">
-    <div class="logo-wrap"><div class="logo">JaawabAI</div><div class="logo-sub">Platform AI untuk semua bisnis Anda</div><button class="logout-btn" onclick="doLogout()">Keluar</button></div>
+    <div class="logo-wrap"><div class="logo">JaawabAI</div><div class="logo-sub">Platform AI untuk semua bisnis Anda</div></div>
     <div class="sec-label">Bisnis Aktif</div>
     <div class="biz-list" id="bizList"></div>
     <button class="add-btn" onclick="addBusiness()">+ Tambah bisnis baru</button>
@@ -216,7 +183,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
       <div class="cfg-panel" id="cfgPanel" style="display:none">
         <div>
-          <div class="cfg-group-title first">&#127970; Identitas Bisnis</div>
+          <div class="cfg-sec-title">Identitas Bisnis</div>
           <div class="cfg-field"><div class="cfg-label">Nama bisnis</div><input class="cfg-input" id="cfgName"></div>
           <div class="cfg-field"><div class="cfg-label">Jenis bisnis</div><input class="cfg-input" id="cfgType"></div>
           <div class="cfg-field"><div class="cfg-label">Nama AI Agent</div><input class="cfg-input" id="cfgAgent"></div>
@@ -230,7 +197,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
-          <div class="cfg-group-title">&#128218; Pengetahuan Bisnis (Knowledge Base)</div>
+          <div class="cfg-sec-title">Knowledge Base</div>
           <div class="kb-tabs">
             <button class="kb-tab active" onclick="switchKbTab('structured',this)">&#128203; Terstruktur</button>
             <button class="kb-tab" onclick="switchKbTab('raw',this)">&#128221; Teks Bebas</button>
@@ -259,7 +226,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
-          <div class="cfg-group-title">&#9889; Kecepatan Respon</div>
+          <div class="cfg-sec-title">Kecepatan Respon</div>
           <select class="cfg-select" id="cfgDelay" onchange="updateDelayPreview()">
             <option value="instant">Langsung (instan)</option>
             <option value="3">3 detik</option>
@@ -271,43 +238,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="delay-preview" id="delayPreview"></div>
         </div>
         <div>
-          <div class="cfg-group-title">&#128241; Koneksi WhatsApp (Fonnte)</div>
+          <div class="cfg-sec-title">WhatsApp (Fonnte)</div>
           <div class="cfg-field"><div class="cfg-label">Token Fonnte</div><input class="cfg-input" id="cfgFonnte" placeholder="Token dari fonnte.com/me"></div>
-          <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px">Nomor Device Fonnte <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('Nomor WhatsApp yang terhubung ke device Fonnte ini (yang menerima chat pelanggan). WAJIB diisi — tanpa ini, pesan yang masuk tidak akan dikenali sistem dan tidak akan dibalas sama sekali.')">&#9432;</button></div><input class="cfg-input" id="cfgDeviceNumber" placeholder="contoh: 81247911334 atau 6285111367547"></div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">PENTING: isi PERSIS sesuai nilai "device" yang benar-benar dikirim Fonnte — beda device bisa beda format (ada yang pakai 62 di depan, ada yang tidak), jangan ditebak/disamakan manual. Cara cek nilai pastinya: kirim 1 pesan test ke nomor ini, lalu buka Supabase &rarr; Edge Functions &rarr; webhook &rarr; Logs, cari baris "Payload masuk dari Fonnte" dan lihat field "device" di situ.</div>
           <div class="cfg-field"><div class="cfg-label" style="display:flex;align-items:center;gap:4px"><span id="kasirLabelText">WA Kasir</span> (juga dipakai untuk nomor ditelepon) <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Ganti sebutan (misal: Admin, CS)" onclick="renameKasirLabel()">&#9998;</button></div><input class="cfg-input" id="cfgKasir" placeholder="0811485774"></div>
-          <div class="cfg-field"><div class="cfg-label">Kalau Pelanggan Kirim Lampiran yang Tidak Bisa Dibaca Sistem</div>
-            <select class="cfg-select" id="cfgMediaFallback">
-              <option value="telepon">Minta Nama+HP, nanti ditelepon balik untuk lihat lampirannya</option>
-              <option value="kb">Proses seperti pesan teks biasa mengikuti Pengetahuan Bisnis/KB (minta pelanggan jelaskan via teks)</option>
-            </select>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Paket Fonnte "Text Only" tidak mengirim isi foto/video/dokumen sama sekali ke sistem (bukan soal teknis biasa) — jadi AI TIDAK PERNAH benar-benar bisa "melihat" lampiran itu di kedua opsi. Bedanya cuma responnya: opsi pertama arahkan ke telepon balik, opsi kedua serahkan ke AI ikuti aturan di KB (misal Kebijakan Komplain) sambil minta pelanggan jelaskan detailnya lewat teks.</div>
-        </div>
-        <div>
-          <div class="cfg-group-title">&#9989; Opt-in Pelanggan</div>
-          <div class="cfg-field" style="display:flex;align-items:center;gap:6px;margin-top:6px">
-            <input type="checkbox" id="cfgOptinEnabled" style="width:auto;margin:0">
-            <label for="cfgOptinEnabled" style="font-size:12px;cursor:pointer">Tawarkan opt-in nomor WA (setelah booking/komplain selesai ditangani)</label>
-          </div>
-          <div class="cfg-field"><div class="cfg-label">Kalimat Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Biar [Nama Agent] bisa kabari kakak kalau ada info penting dari kami nanti, boleh kami simpan nomor ini ya?&quot;"></textarea></div>
-          <div class="cfg-field"><div class="cfg-label">Kalimat Terima Kasih setelah Opt-in (opsional)</div><textarea class="cfg-input" id="cfgOptinThanksMessage" style="min-height:50px" placeholder="Kosongkan untuk pakai kalimat default: &quot;Terima kasih kak, sudah diizinkan. Kalau nanti ada info penting dari [Nama Bisnis], kami kabari lewat nomor ini ya.&quot;"></textarea></div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau diaktifkan, AI akan menanyakan ini SEKALI SAJA per pelanggan (tidak diulang tiap booking/komplain) — TAPI tidak langsung ditempel ke balasan konfirmasi booking/komplain. Begitu booking/komplain selesai, sistem menunggu pelanggan membalas apa pun dulu (tanda obrolan masih lanjut/dia masih dalam mood puas), BARU pertanyaan opt-in dikirim sebagai pesan terpisah di balasan berikutnya — bukan numpuk di 1 bubble yang sama. Begitu pelanggan jawab "boleh/iya/ok" dsb, status otomatis tercatat di tabel <code>customer_optin</code> DAN AI otomatis membalas kalimat terima kasih di atas SEKALI SAJA — supaya pelanggan sendiri ingat kelak dia pernah setuju dihubungi, biar tidak kaget saat dapat info/blast beberapa bulan ke depan.</div>
-        </div>
-        <div>
-          <div class="cfg-group-title" style="display:flex;align-items:center;gap:4px">&#128226; Blast / Broadcast <button class="icon-btn" style="width:16px;height:16px;font-size:9px" title="Info" onclick="alert('TIDAK ADA yang jalan otomatis sendiri tanpa diklik. Admin WAJIB klik \'Mulai Kirim\' setiap kali mau broadcast — baik pesan baru ATAU pesan yang persis sama diulang lagi nanti.\n\nSetelah diklik, pesan dikirim BERTAHAP & ACAK sepanjang 24 jam (bukan sekaligus) ke pelanggan yang statusnya opt-in, supaya tidak memicu deteksi anti-spam WhatsApp. Tiap pelanggan cuma dikirimi 1x untuk sesi itu.\n\nSelama sesi masih berjalan, ada tombol \'Batalkan Blast\' kalau mau dihentikan di tengah jalan (sisa pelanggan yang belum kebagian tidak akan dikirimi lagi). Dashboard juga menampilkan perkiraan kasar berapa hari sesi ini akan selesai, dihitung dari sisa pelanggan dibagi limit harian.\n\nBegitu semua pelanggan halal di sesi itu sudah kebagian, sesi otomatis berhenti sendiri (tidak ada sesi baru yang dibuat otomatis) — menunggu klik \'Mulai Kirim\' berikutnya dari admin.')">&#9432;</button></div>
-          <div class="cfg-field"><div class="cfg-label">Pesan Blast</div><textarea class="cfg-input" id="cfgBlastMessage" style="min-height:70px" placeholder="Isi pesan promo/pengumuman yang mau dikirim ke pelanggan yang sudah opt-in..."></textarea></div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Sistem OTOMATIS menempelkan 1 baris alasan di akhir pesan ("Kakak menerima pesan ini karena pernah setuju dihubungi [Nama Bisnis] untuk info penting.") — tidak perlu diketik manual, supaya pelanggan selalu diingatkan kenapa dapat pesan ini.</div>
-          <div class="cfg-field"><div class="cfg-label">Jumlah Nomor Dikirim per 24 Jam</div><input class="cfg-input" type="number" min="0" id="cfgBlastDailyLimit" placeholder="misal: 20"></div>
-          <div id="blastStatusBox" style="font-size:11px;color:var(--muted);margin-bottom:8px">Memuat status blast...</div>
-          <div style="display:flex;gap:8px">
-            <button class="add-btn" style="flex:1" onclick="startBlast()">&#128640; Mulai Kirim</button>
-            <button class="add-btn" id="blastCancelBtn" style="flex:1;display:none;background:var(--danger,#c0392b);color:#fff" onclick="cancelBlast()">&#10060; Batalkan Blast</button>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Klik "Mulai Kirim" memicu sesi broadcast baru — WAJIB dilakukan manual tiap kali (lihat ikon info &#9432; di atas untuk detail). Hanya mengirim ke nomor yang statusnya "opted_in" di tabel <code>customer_optin</code>, butuh cron terjadwal di Supabase (lihat <code>migrasi_blast_sesi_manual.sql</code>) supaya pengiriman bertahapnya benar-benar jalan tanpa dashboard ini perlu dibiarkan terbuka.</div>
-        </div>
-        <div>
-          <div class="cfg-group-title">&#128276; Manager &amp; Notifikasi</div>
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
@@ -328,13 +261,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         </div>
         <button class="save-btn" onclick="saveConfig()">Simpan &amp; Terapkan</button>
         <div>
-          <div class="cfg-group-title">&#128202; Statistik</div>
+          <div class="cfg-sec-title">Statistik</div>
           <div class="stat-row"><span>Percakapan</span><span class="stat-val" id="statConv">0</span></div>
           <div class="stat-row"><span>Dijawab</span><span class="stat-val" id="statAns">0</span></div>
           <div class="stat-row"><span>Lead</span><span class="stat-val" id="statLead">0</span></div>
         </div>
         <div>
-          <div class="cfg-group-title">&#129514; Uji Skenario</div>
+          <div class="cfg-sec-title">Uji Skenario</div>
           <div id="quickReplies"></div>
         </div>
       </div>
@@ -488,10 +421,7 @@ function toggleCfg() {
   cfgOpen = !cfgOpen;
   document.getElementById('cfgPanel').style.display = cfgOpen ? 'flex' : 'none';
   document.getElementById('ws').className = cfgOpen ? 'workspace cfg' : 'workspace';
-  if (cfgOpen) {
-    loadKbForBiz(currentBiz.id);
-    refreshBlastStatus(); // supaya status "terkirim X, sisa Y" selalu update tiap kali panel dibuka
-  }
+  if (cfgOpen) loadKbForBiz(currentBiz.id);
 }
 
 function loadCfgForm() {
@@ -502,15 +432,7 @@ function loadCfgForm() {
   document.getElementById('cfgGoal').value = currentBiz.goal;
   document.getElementById('cfgDelay').value = currentBiz.responseDelay || 'random';
   document.getElementById('cfgFonnte').value = currentBiz.fonnte_token || '';
-  document.getElementById('cfgDeviceNumber').value = currentBiz.device_number || '';
   document.getElementById('cfgKasir').value = currentBiz.kasir_number || '';
-  document.getElementById('cfgMediaFallback').value = currentBiz.media_fallback_mode || 'telepon';
-  document.getElementById('cfgOptinEnabled').checked = !!currentBiz.optin_enabled;
-  document.getElementById('cfgOptinMessage').value = currentBiz.optin_message || '';
-  document.getElementById('cfgOptinThanksMessage').value = currentBiz.optin_thanks_message || '';
-  document.getElementById('cfgBlastMessage').value = currentBiz.blast_message || '';
-  document.getElementById('cfgBlastDailyLimit').value = (currentBiz.blast_daily_limit != null) ? currentBiz.blast_daily_limit : 0;
-  refreshBlastStatus();
   document.getElementById('cfgManager').value = currentBiz.manager_number || '';
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
@@ -536,15 +458,7 @@ function saveConfig() {
   currentBiz.goal = document.getElementById('cfgGoal').value;
   currentBiz.responseDelay = document.getElementById('cfgDelay').value;
   currentBiz.fonnte_token = document.getElementById('cfgFonnte').value;
-  currentBiz.device_number = document.getElementById('cfgDeviceNumber').value.replace(/\D/g, '');
   currentBiz.kasir_number = document.getElementById('cfgKasir').value;
-  currentBiz.media_fallback_mode = document.getElementById('cfgMediaFallback').value;
-  currentBiz.optin_enabled = document.getElementById('cfgOptinEnabled').checked;
-  currentBiz.optin_message = document.getElementById('cfgOptinMessage').value;
-  currentBiz.optin_thanks_message = document.getElementById('cfgOptinThanksMessage').value;
-  currentBiz.blast_message = document.getElementById('cfgBlastMessage').value;
-  currentBiz.blast_daily_limit = parseInt(document.getElementById('cfgBlastDailyLimit').value, 10);
-  if (isNaN(currentBiz.blast_daily_limit)) currentBiz.blast_daily_limit = 0;
   currentBiz.manager_number = document.getElementById('cfgManager').value;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
@@ -602,14 +516,9 @@ function renderKbManager(bizId) {
   initKb(bizId);
   const cats = kbData[bizId] || [];
   el.innerHTML = cats.map((cat,ci) => `
-    <div class="kb-cat" id="kbc_${ci}" draggable="true"
-      ondragstart="kbDragStart(${ci},event)"
-      ondragover="kbDragOver(${ci},event)"
-      ondragleave="kbDragLeave(${ci},event)"
-      ondrop="kbDrop(${ci},event)"
-      ondragend="kbDragEnd(event)">
+    <div class="kb-cat" id="kbc_${ci}">
         <div class="kb-cat-head" onclick="toggleCat(${ci})">
-          <div class="kb-cat-title"><span class="kb-drag-handle" title="Tahan &amp; geser untuk urutkan">&#8942;&#8942;</span><span>${cat.icon}</span><span>${cat.label}</span></div>
+          <div class="kb-cat-title"><span>${cat.icon}</span><span>${cat.label}</span></div>
           <div style="display:flex;align-items:center;gap:2px">
             <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Ganti nama kategori" onclick="renameKbCat(${ci},event)">&#9998;</button>
             <button class="icon-btn" style="width:20px;height:20px;font-size:11px" title="Gabung ke kategori lain" onclick="mergeKbCat(${ci},event)">&#128279;</button>
@@ -635,42 +544,6 @@ function renderKbManager(bizId) {
 }
 
 function toggleCat(ci) { document.getElementById('kbc_'+ci)?.classList.toggle('open'); }
-
-// --- Drag & drop untuk urutkan kategori KB ---
-let kbDragCi = null;
-function kbDragStart(ci, ev) {
-  kbDragCi = ci;
-  ev.dataTransfer.effectAllowed = 'move';
-  try { ev.dataTransfer.setData('text/plain', String(ci)); } catch(e) {}
-  ev.currentTarget.classList.add('dragging');
-}
-function kbDragOver(ci, ev) {
-  ev.preventDefault();
-  ev.dataTransfer.dropEffect = 'move';
-  if (kbDragCi !== null && kbDragCi !== ci) {
-    document.getElementById('kbc_'+ci)?.classList.add('drag-over');
-  }
-}
-function kbDragLeave(ci, ev) {
-  document.getElementById('kbc_'+ci)?.classList.remove('drag-over');
-}
-function kbDrop(ci, ev) {
-  ev.preventDefault();
-  document.getElementById('kbc_'+ci)?.classList.remove('drag-over');
-  if (kbDragCi === null || kbDragCi === ci || !currentBiz || !kbData[currentBiz.id]) { kbDragCi = null; return; }
-  const arr = kbData[currentBiz.id];
-  const moved = arr.splice(kbDragCi, 1)[0];
-  arr.splice(ci, 0, moved);
-  kbDragCi = null;
-  saveKb(currentBiz.id);
-  syncKb();
-  refreshRawTabIfVisible();
-  renderKbManager(currentBiz.id);
-}
-function kbDragEnd(ev) {
-  document.querySelectorAll('.kb-cat.dragging,.kb-cat.drag-over').forEach(e=>e.classList.remove('dragging','drag-over'));
-  kbDragCi = null;
-}
 
 function updateKbCat(ci, val) {
   if (!currentBiz || !kbData[currentBiz.id]) return;
@@ -1128,11 +1001,15 @@ function closeEditor() {
 function saveEditor() {
   const val = document.getElementById('editorTextarea').value;
   if (_editorIsRaw) {
-    // Teks Bebas: kembalikan ke textarea, belum tersimpan permanen —
-    // pakai tombol "Simpan (tanpa AI)" atau "Strukturkan dengan AI" di bawahnya untuk benar-benar menyimpan.
+    // Teks Bebas: dulu tombol ini cuma mengembalikan teks ke textarea
+    // tanpa benar-benar menyimpan ke database — user harus klik tombol
+    // terpisah "Simpan (tanpa AI)" di panel utama, yang gampang terlewat
+    // (tidak ada pesan apa pun kalau belum disimpan). Sekarang "✓ Simpan"
+    // di editor ini langsung memicu penyimpanan sungguhan ke Supabase.
     document.getElementById('cfgKnowledge').value = val;
     autoResizeKb(document.getElementById('cfgKnowledge'));
     closeEditor();
+    saveRawPlain();
     return;
   }
   if (_editorCatIdx < 0 || !currentBiz || !kbData[currentBiz.id]) return;
@@ -1203,83 +1080,6 @@ function showTyping() {
 }
 
 function removeTyping() { document.getElementById('typing')?.remove(); }
-
-// Tanya ke webhook (action blast_status) status sesi blast business yang sedang dibuka di
-// dashboard: kalau ada sesi 'active' tampilkan progresnya, kalau tidak ada tampilkan preview
-// "kalau diklik Mulai Kirim sekarang akan kena berapa pelanggan".
-async function refreshBlastStatus() {
-  if (!currentBiz) return;
-  const elBiz = currentBiz;
-  const box = document.getElementById('blastStatusBox');
-  if (box) box.textContent = 'Memuat status blast...';
-  try {
-    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'blast_status', business_id: elBiz.id })
-    });
-    const d = await res.json();
-    if (!box || currentBiz !== elBiz) return;
-    const cancelBtn = document.getElementById('blastCancelBtn');
-    if (d.active) {
-      const etaText = (d.estimated_days_left != null)
-        ? (d.estimated_days_left <= 0 ? ' Perkiraan selesai: sebentar lagi.' : ' Perkiraan selesai: ~' + d.estimated_days_left + ' hari lagi (kasar, bisa lebih cepat/lambat).')
-        : '';
-      box.innerHTML = '🟢 Sesi AKTIF — sudah terkirim <b>' + d.sent_count + '</b>, sisa menunggu giliran (acak dalam 24 jam): <b>' + d.remaining_count + '</b>. Limit harian: ' + d.daily_limit + '/24 jam.' + etaText;
-      if (cancelBtn) cancelBtn.style.display = '';
-    } else {
-      box.innerHTML = 'Tidak ada sesi aktif. Kalau klik "Mulai Kirim" sekarang: akan dikirim ke <b>' + d.eligible_for_new_session + '</b> pelanggan halal.';
-      if (cancelBtn) cancelBtn.style.display = 'none';
-    }
-  } catch (e) {
-    console.error('Gagal ambil status blast:', e);
-    if (box) box.textContent = 'Gagal memuat status blast (cek koneksi/console).';
-  }
-}
-
-// Dipanggil tombol "Batalkan Blast" — hentikan sesi aktif SEKARANG. Pelanggan yang belum
-// kebagian untuk sesi ini tidak akan dikirimi apa-apa lagi (kecuali admin mulai sesi baru nanti).
-async function cancelBlast() {
-  if (!currentBiz) return;
-  if (!confirm('Batalkan sesi blast yang sedang berjalan? Pelanggan yang belum kebagian TIDAK akan dikirimi pesan ini lagi (kecuali kamu klik "Mulai Kirim" lagi nanti).')) return;
-  try {
-    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'blast_cancel', business_id: currentBiz.id })
-    });
-    const d = await res.json();
-    if (d.error) throw new Error(d.error);
-    alert('Sesi blast dibatalkan.');
-    refreshBlastStatus();
-  } catch (e) {
-    alert('Gagal membatalkan blast: ' + e.message);
-  }
-}
-
-// Dipanggil tombol "Mulai Kirim" — admin WAJIB klik ini setiap kali mau broadcast (pesan baru
-// ATAU pesan yang sama diulang). Tidak ada jalur lain yang bisa memicu sesi blast baru.
-async function startBlast() {
-  if (!currentBiz) return;
-  const msg = (document.getElementById('cfgBlastMessage').value || '').trim();
-  const limit = parseInt(document.getElementById('cfgBlastDailyLimit').value, 10) || 0;
-  if (!msg) { alert('Isi dulu "Pesan Blast"-nya.'); return; }
-  if (limit <= 0) { alert('Isi dulu "Jumlah Nomor Dikirim per 24 Jam" (harus lebih dari 0).'); return; }
-  if (!confirm('Mulai kirim pesan ini ke semua pelanggan yang sudah opt-in? Pengiriman akan bertahap & acak dalam 24 jam (bukan sekaligus), berjalan otomatis lewat cron. Kalau masih ada sesi blast lain yang sedang berjalan, sesi itu akan dihentikan & digantikan sesi ini.')) return;
-  try {
-    const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'blast_start', business_id: currentBiz.id, message: msg, daily_limit: limit })
-    });
-    const d = await res.json();
-    if (d.error) throw new Error(d.error);
-    alert('Sesi blast dimulai! Akan terkirim bertahap ke ' + d.eligible_count + ' pelanggan dalam 24 jam ke depan (acak, bukan sekaligus).');
-    refreshBlastStatus();
-  } catch (e) {
-    alert('Gagal memulai blast: ' + e.message);
-  }
-}
 
 async function sendMsg() {
   const inp = document.getElementById('chatInput');
@@ -1389,19 +1189,11 @@ function buildPrompt() {
 const SUPABASE_URL = "https://jbmopxdepjyokxmnekcb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_jy-N6XaEb5MG_UrFXQEzwQ_JRV8jSx6";
 
-// Client Supabase Auth — dipakai HANYA untuk login/logout & mengambil token sesi.
-// Akses baca/tulis data bisnis tetap lewat sbFetch() di bawah (REST API langsung),
-// tapi sekarang sbFetch mengambil token user yang login (bukan cuma kunci publik),
-// supaya cocok dengan aturan RLS "harus login" yang di-set di Supabase.
-const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 async function sbFetch(path, options) {
-  const { data: { session } } = await sbAuth.auth.getSession();
-  const token = session ? session.access_token : SUPABASE_KEY;
   const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
     headers: {
       "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + token,
+      "Authorization": "Bearer " + SUPABASE_KEY,
       "Content-Type": "application/json",
       "Prefer": options?.prefer || ""
     },
@@ -1412,65 +1204,11 @@ async function sbFetch(path, options) {
   return text ? JSON.parse(text) : null;
 }
 
-// ==================== LOGIN GATE ====================
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
-  errEl.textContent = '';
-  if (!email || !password) { errEl.textContent = 'Isi email dan password dulu ya.'; return; }
-  btn.disabled = true; btn.textContent = 'Memeriksa...';
-  const { error } = await sbAuth.auth.signInWithPassword({ email, password });
-  btn.disabled = false; btn.textContent = 'Masuk';
-  if (error) { errEl.textContent = 'Email atau password salah.'; return; }
-  showApp();
-}
-
-async function doLogout() {
-  await sbAuth.auth.signOut();
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('appRoot').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-}
-
-function showApp() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('appRoot').classList.remove('hidden');
-  init();
-}
-
-async function checkAuthAndStart() {
-  const { data: { session } } = await sbAuth.auth.getSession();
-  if (session) { showApp(); return; }
-  document.getElementById('loginScreen').classList.remove('hidden');
-}
-
 async function loadBusinessesFromDB() {
   const data = await sbFetch("businesses?select=*");
   if (!data || !data.length) return false;
   data.forEach(row => {
-    let biz = BUSINESSES.find(b => b.id === row.id);
-    if (!biz) {
-      // Bisnis baru yang dibuat lewat dashboard (bukan salah satu dari 3 hardcode awal) —
-      // tanpa ini, bisnis ini akan hilang dari sidebar setiap kali halaman di-refresh.
-      biz = {
-        id: row.id,
-        name: row.name || 'Bisnis Baru',
-        type: row.type || '',
-        icon: row.icon || '🏢',
-        agentName: row.agent_name || 'AI',
-        goal: row.goal || 'convert',
-        responseDelay: row.response_delay || 'random',
-        fonnte_token: row.fonnte_token || '',
-        kasir_number: row.kasir_number || '',
-        knowledge: row.knowledge || '',
-        scenarios: [],
-        stats: {conv:0,answered:0,leads:0}
-      };
-      BUSINESSES.push(biz);
-    }
+    const biz = BUSINESSES.find(b => b.id === row.id);
     if (biz) {
       biz.name = row.name || biz.name;
       biz.type = row.type || biz.type;
@@ -1479,14 +1217,7 @@ async function loadBusinessesFromDB() {
       biz.goal = row.goal || biz.goal;
       biz.responseDelay = row.response_delay || biz.responseDelay;
       biz.fonnte_token = row.fonnte_token || biz.fonnte_token;
-      biz.device_number = row.device_number || biz.device_number;
       biz.kasir_number = row.kasir_number || biz.kasir_number;
-      biz.media_fallback_mode = row.media_fallback_mode || biz.media_fallback_mode;
-      biz.optin_enabled = (row.optin_enabled != null) ? row.optin_enabled : biz.optin_enabled;
-      biz.optin_message = (row.optin_message != null) ? row.optin_message : biz.optin_message;
-      biz.optin_thanks_message = (row.optin_thanks_message != null) ? row.optin_thanks_message : biz.optin_thanks_message;
-      biz.blast_message = (row.blast_message != null) ? row.blast_message : biz.blast_message;
-      biz.blast_daily_limit = (row.blast_daily_limit != null) ? row.blast_daily_limit : biz.blast_daily_limit;
       biz.manager_number = row.manager_number || biz.manager_number;
       biz.kasir_label = row.kasir_label || biz.kasir_label;
       biz.staff_label = row.staff_label || biz.staff_label;
@@ -1516,14 +1247,7 @@ async function saveBusinessToDB(biz) {
       goal: biz.goal,
       response_delay: biz.responseDelay,
       fonnte_token: biz.fonnte_token,
-      device_number: biz.device_number,
       kasir_number: biz.kasir_number,
-      media_fallback_mode: biz.media_fallback_mode,
-      optin_enabled: biz.optin_enabled || false,
-      optin_message: biz.optin_message || '',
-      optin_thanks_message: biz.optin_thanks_message || '',
-      blast_message: biz.blast_message || '',
-      blast_daily_limit: biz.blast_daily_limit || 0,
       manager_number: biz.manager_number,
       kasir_label: biz.kasir_label,
       staff_label: biz.staff_label,
@@ -2008,7 +1732,7 @@ window.addEventListener('load', () => {
   else activeProvider = localStorage.getItem('jaawab_provider') || 'gemini';
 });
 
-checkAuthAndStart();
+init();
 </script>
 </body>
 </html>
