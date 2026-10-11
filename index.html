@@ -1208,8 +1208,29 @@ async function loadBusinessesFromDB() {
   const data = await sbFetch("businesses?select=*");
   if (!data || !data.length) return false;
   data.forEach(row => {
-    const biz = BUSINESSES.find(b => b.id === row.id);
-    if (biz) {
+    let biz = BUSINESSES.find(b => b.id === row.id);
+    if (!biz) {
+      // Bisnis ini sudah ada di Supabase tapi belum ada di daftar lokal
+      // (mis. ditambahkan lewat sesi/browser lain) — sebelumnya baris ini
+      // diam-diam dilewati sehingga bisnis seperti ini "hilang" dari sidebar
+      // walau datanya aman di database. Sekarang ditambahkan sebagai entri baru.
+      biz = {
+        id: row.id,
+        name: row.name || 'Bisnis Baru',
+        type: row.type || 'Bisnis baru',
+        icon: row.icon || '&#127970;',
+        agentName: row.agent_name || 'Asisten',
+        goal: row.goal || 'convert',
+        responseDelay: row.response_delay || 'random',
+        fonnte_token: '',
+        kasir_number: '',
+        knowledge: '',
+        scenarios: [],
+        stats: {conv:0,answered:0,leads:0}
+      };
+      BUSINESSES.push(biz);
+    }
+    {
       biz.name = row.name || biz.name;
       biz.type = row.type || biz.type;
       biz.icon = row.icon || biz.icon;
