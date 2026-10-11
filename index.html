@@ -259,6 +259,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
         </div>
         <div>
+          <div class="cfg-group-title">&#128247; Lampiran Gambar (IG/FB &amp; In-App)</div>
+          <div class="kb-file-hint" style="margin-bottom:8px">
+            Gambar di sini BEDA dari upload di Knowledge Base &mdash; bukan diekstrak jadi teks, tapi disimpan utuh dan bisa
+            dikirim AI Agent langsung ke pelanggan (via IG/FB, atau in-app chat) kalau relevan dengan pertanyaan,
+            supaya jawaban bot lebih mudah dipahami (uraian + gambar).
+          </div>
+          <div id="attachList"></div>
+          <label class="kb-file-btn" style="margin-top:6px;display:inline-block">&#128247; Tambah Lampiran
+            <input type="file" accept="image/*" style="display:none" onchange="addAttachment(this)">
+          </label>
+        </div>
+        <div>
           <div class="cfg-group-title">&#9889; Kecepatan Respon</div>
           <select class="cfg-select" id="cfgDelay" onchange="updateDelayPreview()">
             <option value="instant">Langsung (instan)</option>
@@ -587,6 +599,102 @@ async function loadKbForBiz(bizId) {
   }
   renderKbManager(bizId);
   syncKb();
+  loadAttachments(bizId);
+}
+
+// ==================== LAMPIRAN GAMBAR (IG/FB & in-app) ====================
+let attachData = {}; // { bizId: [{id, label, description, image_url}, ...] }
+
+function escAttach(t) {
+  return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadAttachments(bizId) {
+  const rows = await sbFetch("kb_attachments?business_id=eq." + encodeURIComponent(bizId) + "&select=*&order=created_at.asc");
+  attachData[bizId] = rows || [];
+  if (currentBiz && currentBiz.id === bizId) renderAttachments();
+}
+
+function renderAttachments() {
+  const bizId = currentBiz?.id;
+  const el = document.getElementById('attachList');
+  if (!el) return;
+  const list = attachData[bizId] || [];
+  el.innerHTML = list.map(a => `
+    <div class="notif-cat-card" style="margin-bottom:8px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <img src="${escAttach(a.image_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
+        <div style="flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word">
+          <div style="font-weight:600;overflow-wrap:break-word;word-break:break-word">${escAttach(a.label)}</div>
+          <div style="font-size:12.5px;color:var(--text-dim,#9aa);overflow-wrap:break-word;word-break:break-word">${escAttach(a.description)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="editAttachment('${escAttach(a.id)}')" title="Edit">&#9998;</button>
+          <button class="kb-file-btn" style="padding:4px 8px" onclick="deleteAttachment('${escAttach(a.id)}')" title="Hapus">&#128465;</button>
+        </div>
+      </div>
+    </div>`).join('') || '<div class="kb-file-hint">Belum ada lampiran gambar.</div>';
+}
+
+async function editAttachment(id) {
+  const bizId = currentBiz?.id;
+  const item = (attachData[bizId] || []).find(a => a.id === id);
+  if (!item) return;
+  const newLabel = prompt('Ubah nama singkat lampiran (TANPA spasi):', item.label);
+  if (newLabel === null) return;
+  const newDescription = prompt('Ubah deskripsi kapan gambar ini relevan:', item.description);
+  if (newDescription === null) return;
+  await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify({ label: newLabel, description: newDescription })
+  });
+  await loadAttachments(bizId);
+}
+
+async function addAttachment(input) {
+  const file = input.files[0]; if (!file) return;
+  const bizId = currentBiz?.id; if (!bizId) return;
+
+  const label = prompt('Nama singkat lampiran ini (dipakai AI untuk memilih, TANPA spasi, misal: contoh_fitur_1):');
+  if (!label) { input.value = ''; return; }
+  const description = prompt('Kapan gambar ini relevan dikirim ke pelanggan? (dibaca AI, tidak dilihat pelanggan)\nMisal: "Tampilan fitur laporan, kirim kalau pelanggan tanya cara melihat laporan"');
+  if (!description) { input.value = ''; return; }
+
+  try {
+    // Upload file mentah ke Supabase Storage (bucket publik "kb-attachments"), pakai token login
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session ? session.access_token : SUPABASE_KEY;
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = bizId + '/' + Date.now() + '_' + label.replace(/[^a-zA-Z0-9_-]/g, '') + '.' + ext;
+    const uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/kb-attachments/' + path, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': file.type },
+      body: file
+    });
+    if (!uploadRes.ok) {
+      const detail = await uploadRes.text();
+      console.error('Upload lampiran gagal:', detail);
+      alert('Gagal upload gambar ke Storage. Pastikan bucket "kb-attachments" ada & publik, dan kebijakan storage mengizinkan user login.\n\n' + detail);
+      input.value = ''; return;
+    }
+    const imageUrl = SUPABASE_URL + '/storage/v1/object/public/kb-attachments/' + path;
+    await sbFetch('kb_attachments', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ business_id: bizId, label, description, image_url: imageUrl })
+    });
+    await loadAttachments(bizId);
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+  input.value = '';
+}
+
+async function deleteAttachment(id) {
+  if (!confirm('Hapus lampiran ini?')) return;
+  await sbFetch('kb_attachments?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+  await loadAttachments(currentBiz.id);
 }
 
 function saveKb(bizId) {
