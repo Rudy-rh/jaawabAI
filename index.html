@@ -1527,7 +1527,7 @@ async function refreshBlastStatus() {
   try {
     const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: await webhookAdminHeaders(),
       body: JSON.stringify({ action: 'blast_status', business_id: elBiz.id })
     });
     const d = await res.json();
@@ -1557,7 +1557,7 @@ async function cancelBlast() {
   try {
     const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: await webhookAdminHeaders(),
       body: JSON.stringify({ action: 'blast_cancel', business_id: currentBiz.id })
     });
     const d = await res.json();
@@ -1581,7 +1581,7 @@ async function startBlast() {
   try {
     const res = await fetch('https://jbmopxdepjyokxmnekcb.supabase.co/functions/v1/webhook', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: await webhookAdminHeaders(),
       body: JSON.stringify({ action: 'blast_start', business_id: currentBiz.id, message: msg, daily_limit: limit })
     });
     const d = await res.json();
@@ -1723,6 +1723,15 @@ async function sbFetch(path, options) {
   if (!res.ok) { const e = await res.text(); console.error("Supabase error:", e); return null; }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
+}
+
+// Header untuk memanggil aksi ADMIN di Edge Function "webhook" (blast_status/start/cancel):
+// wajib membawa token sesi login, kalau tidak server menjawab 401.
+async function webhookAdminHeaders() {
+  const { data: { session } } = await sbAuth.auth.getSession();
+  const h = { 'Content-Type': 'application/json' };
+  if (session) h['Authorization'] = 'Bearer ' + session.access_token;
+  return h;
 }
 
 // ==================== LOGIN GATE ====================
