@@ -322,6 +322,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="cfg-group-title">&#128276; Manager &amp; Notifikasi</div>
           <div class="cfg-field"><div class="cfg-label">WA Manager</div><input class="cfg-input" id="cfgManager" placeholder="0812xxxxxxxx (kosongkan kalau belum ada)"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Nomor terpisah dari kasir. Diisi CC di kategori Pesan Khusus mana saja yang perlu manager tahu (centang per kategori di bawah).</div>
+          <div class="cfg-field" style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <input type="checkbox" id="cfgForwardManager" style="width:auto;margin:0">
+            <label for="cfgForwardManager" style="font-size:12px;cursor:pointer">Mode chatbot + teruskan ke WA Manager (pertanyaan tak terjawab &amp; keluhan)</label>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Untuk bisnis yang hanya butuh chatbot menjawab dari Pengetahuan Bisnis (contoh: Rudartinama). Kalau aktif, AI memakai prompt netral (tanpa aturan booking/barberman/telepon kasir) dan meneruskan pertanyaan yang tidak bisa dijawab atau keluhan ke WA Manager di atas (cadangan: WA Kasir). Wajib isi WA Manager. Kosongkan untuk bisnis booking seperti Storeebarber.</div>
           <div class="cfg-field"><div class="cfg-label">Masa Garansi Komplain (hari)</div><input class="cfg-input" type="number" min="0" id="cfgGaransiHari" placeholder="3"></div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Kalau tanggal pelayanan yang dikomplain masih dalam rentang ini, AI akan bilang itu masuk garansi (bisa langsung datang ke tempat). Lewat dari ini, AI akan bilang perlu diteruskan ke manajemen dulu.</div>
           <div style="display:flex;gap:8px">
@@ -524,6 +529,7 @@ function loadCfgForm() {
   document.getElementById('cfgBlastDailyLimit').value = (currentBiz.blast_daily_limit != null) ? currentBiz.blast_daily_limit : 0;
   refreshBlastStatus();
   document.getElementById('cfgManager').value = currentBiz.manager_number || '';
+  document.getElementById('cfgForwardManager').checked = currentBiz.forward_to_manager === true;
   document.getElementById('cfgGaransiHari').value = (currentBiz.garansi_hari != null) ? currentBiz.garansi_hari : 3;
   document.getElementById('cfgKasirCallStart').value = currentBiz.kasir_call_start || '11:00';
   document.getElementById('cfgKasirCallEnd').value = currentBiz.kasir_call_end || '22:00';
@@ -558,6 +564,7 @@ function saveConfig() {
   currentBiz.blast_daily_limit = parseInt(document.getElementById('cfgBlastDailyLimit').value, 10);
   if (isNaN(currentBiz.blast_daily_limit)) currentBiz.blast_daily_limit = 0;
   currentBiz.manager_number = document.getElementById('cfgManager').value;
+  currentBiz.forward_to_manager = document.getElementById('cfgForwardManager').checked;
   currentBiz.garansi_hari = parseInt(document.getElementById('cfgGaransiHari').value, 10);
   if (isNaN(currentBiz.garansi_hari)) currentBiz.garansi_hari = 3;
   currentBiz.kasir_call_start = document.getElementById('cfgKasirCallStart').value || '11:00';
@@ -1810,6 +1817,7 @@ async function loadBusinessesFromDB() {
       biz.blast_message = (row.blast_message != null) ? row.blast_message : biz.blast_message;
       biz.blast_daily_limit = (row.blast_daily_limit != null) ? row.blast_daily_limit : biz.blast_daily_limit;
       biz.manager_number = row.manager_number || biz.manager_number;
+      if (row.forward_to_manager != null) biz.forward_to_manager = (row.forward_to_manager === true);
       biz.kasir_label = row.kasir_label || biz.kasir_label;
       biz.staff_label = row.staff_label || biz.staff_label;
       biz.garansi_hari = (row.garansi_hari != null) ? row.garansi_hari : biz.garansi_hari;
@@ -1847,6 +1855,7 @@ async function saveBusinessToDB(biz) {
       blast_message: biz.blast_message || '',
       blast_daily_limit: biz.blast_daily_limit || 0,
       manager_number: biz.manager_number,
+      ...(typeof biz.forward_to_manager === 'boolean' ? { forward_to_manager: biz.forward_to_manager } : {}),
       kasir_label: biz.kasir_label,
       staff_label: biz.staff_label,
       garansi_hari: biz.garansi_hari,
@@ -1964,6 +1973,15 @@ const DEFAULT_KOMPLAIN_NOTE = 'Bisa jadi sebentar lagi pelanggan ybs akan menele
 function ensureNotifCategories(biz) {
   if (biz.notif_categories && biz.notif_categories.length) return;
   // Migrasi dari data lama (kalau ada) supaya tidak kehilangan konfigurasi sebelumnya
+  // Teks bawaan khas Storeebarber HANYA dipakai untuk bisnis 'barbershop'. Bisnis lain mendapat default netral
+  // (header/footer kosong) supaya tidak ada teks Storeelove/barberman yang ikut terkirim ke staf bisnis lain.
+  if (biz.id !== 'barbershop') {
+    biz.notif_categories = [
+      { id: 'booking', label: 'Pesanan', target: biz.kasir_number || '', header: '', footer: '' },
+      { id: 'komplain', label: 'Keluhan', target: biz.kasir_number || '', header: '', footer: biz.komplain_note || '' }
+    ];
+    return;
+  }
   biz.notif_categories = [
     {
       id: 'booking', label: 'Booking Pesanan', target: biz.kasir_number || '',
